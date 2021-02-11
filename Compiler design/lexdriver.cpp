@@ -584,17 +584,19 @@ void createTokenFile(string fileName) {
 		cout << "Can't open file" << endl;
 	}
 
-	string ErroName = newFileName + ".outlexerrors";
+	string errorName = newFileName + ".outlexerrors";
 	newFileName = newFileName + ".outlextokens";
+
 
 	while (!fileRows.empty()) {
 		string token = nextToken();
-		if (currentRow < lineCounter) {
-			cout << "\n";
-			currentRow++;
-		}
 		if (token == "error" || token == "invalid character") {
-			cout << "[" << token << ", " << lexeme << ", " << lineCounter << "]";
+			errorFile.open(errorName, ios::app);
+			if (errorFile.is_open()) {
+				cout << "writing to file";
+				errorFile << "[" << token << ", " << lexeme << ", " << lineCounter << "]\n" ;
+			}
+			errorFile.close();
 		}
 		else {
 			if (token != "empty") { // check the list of reserved words and rename token if found in list
@@ -615,6 +617,11 @@ void createTokenFile(string fileName) {
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 				}
+				targetFile.open(newFileName, ios::app);
+				if (targetFile.is_open()) {
+					targetFile << "[" << token << ", " << lexeme << ", " << lineCounter << "]\n";
+				}
+				targetFile.close();
 				cout << "[" << token << ", " << lexeme << ", " << lineCounter << "]";
 
 			}

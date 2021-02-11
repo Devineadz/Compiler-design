@@ -2,6 +2,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 using namespace std;
 
 vector<string> fileRows;
@@ -91,11 +92,11 @@ int table(int state, char lookup) {
 		}
 		else if (lookup == '+') {
 			finalState = true;
-			tokenHolder = "plus"; 
+			tokenHolder = "plus";
 		}
 		else if (lookup == '-') {
 			finalState = true;
-			tokenHolder = "minus"; 
+			tokenHolder = "minus";
 		}
 		else if (lookup == '_') { // error, cannot start with underscore
 			finalState = true;
@@ -103,7 +104,7 @@ int table(int state, char lookup) {
 		}
 		else if (lookup == '.') {
 			finalState = true;
-			tokenHolder = "dot"; 
+			tokenHolder = "dot";
 		}
 		else if (lookup == '=') {
 			if (isLast == true) {
@@ -115,31 +116,31 @@ int table(int state, char lookup) {
 		}
 		else if (lookup == '(') {
 			finalState = true;
-			tokenHolder = "openpar"; 
+			tokenHolder = "openpar";
 		}
 		else if (lookup == ')') {
 			finalState = true;
-			tokenHolder = "closepar"; 
+			tokenHolder = "closepar";
 		}
 		else if (lookup == '{') {
 			finalState = true;
-			tokenHolder = "opencubr"; 
+			tokenHolder = "opencubr";
 		}
 		else if (lookup == '}') {
 			finalState = true;
-			tokenHolder = "closecubr"; 
+			tokenHolder = "closecubr";
 		}
 		else if (lookup == '[') {
 			finalState = true;
-			tokenHolder = "opensqbr"; 
+			tokenHolder = "opensqbr";
 		}
 		else if (lookup == ']') {
 			finalState = true;
-			tokenHolder = "closesqbr"; 
+			tokenHolder = "closesqbr";
 		}
 		else if (lookup == ';') {
 			finalState = true;
-			tokenHolder = "semi"; 
+			tokenHolder = "semi";
 		}
 		else if (lookup == ',') {
 			finalState = true;
@@ -147,7 +148,7 @@ int table(int state, char lookup) {
 		}
 		else if (lookup == '|') {
 			finalState = true;
-			tokenHolder = "or"; 
+			tokenHolder = "or";
 		}
 		else if (lookup == '&') {
 			finalState = true;
@@ -155,7 +156,7 @@ int table(int state, char lookup) {
 		}
 		else if (lookup == '!') {
 			finalState = true;
-			tokenHolder = "not"; 
+			tokenHolder = "not";
 		}
 		else if (lookup == '?') {
 			finalState = true;
@@ -178,8 +179,8 @@ int table(int state, char lookup) {
 				state = 30;
 		}
 		else if (lookup == '*') {
-				finalState = true;
-				tokenHolder = "mult";
+			finalState = true;
+			tokenHolder = "mult";
 		}
 		else if (lookup == '/') {
 			state = 32;
@@ -192,7 +193,7 @@ int table(int state, char lookup) {
 			else
 				state = 33;
 		}
-		else if (lookup == ' ') {
+		else if (lookup == ' ' || lookup == '\t') { // to ignore spaces and tabs
 			finalState = true;
 			tokenHolder = "empty";
 		}
@@ -217,7 +218,7 @@ int table(int state, char lookup) {
 		else {
 			finalState = true;
 			needsBacking = true;
-			tokenHolder = "intnum"; 
+			tokenHolder = "intnum";
 			state = 1;
 		}
 		return state;
@@ -229,7 +230,7 @@ int table(int state, char lookup) {
 		else {
 			finalState = true;
 			needsBacking = true;
-			tokenHolder = "intnum"; 
+			tokenHolder = "intnum";
 			state = 1;
 		}
 		return state;
@@ -244,7 +245,7 @@ int table(int state, char lookup) {
 		else {
 			finalState = true;
 			needsBacking = true;
-			tokenHolder = "id"; 
+			tokenHolder = "id";
 			state = 1;
 		}
 		return state;
@@ -253,7 +254,7 @@ int table(int state, char lookup) {
 		if ((lookup >= 'a' && lookup <= 'z') || (lookup >= 'A' && lookup <= 'Z') || lookup == '0' || lookup == '1' || lookup == '2' || lookup == '3' || lookup == '4' || lookup == '5' || lookup == '6' || lookup == '7' || lookup == '8' || lookup == '9' || (lookup == ' ')) {}
 		else if (lookup == '"') {
 			finalState = true;
-			tokenHolder = "stringlit"; 
+			tokenHolder = "stringlit";
 			state = 1;
 		}
 		else {
@@ -275,7 +276,7 @@ int table(int state, char lookup) {
 		return state;
 		break;
 	case 8: // H
-		if ( lookup == '1' || lookup == '2' || lookup == '3' || lookup == '4' || lookup == '5' || lookup == '6' || lookup == '7' || lookup == '8' || lookup == '9') {}
+		if (lookup == '1' || lookup == '2' || lookup == '3' || lookup == '4' || lookup == '5' || lookup == '6' || lookup == '7' || lookup == '8' || lookup == '9') {}
 		else if (lookup == '0') {
 			state = 9;
 		}
@@ -285,7 +286,7 @@ int table(int state, char lookup) {
 		else {
 			finalState = true;
 			needsBacking = true;
-			tokenHolder = "floatnum"; 
+			tokenHolder = "floatnum";
 			state = 1;
 		}
 		return state;
@@ -305,6 +306,14 @@ int table(int state, char lookup) {
 	case 10: // J
 		if (lookup == '+' || lookup == '-') {
 			state = 11;
+		}
+		else if (lookup == '0' || lookup == '1' || lookup == '2' || lookup == '3' || lookup == '4' || lookup == '5' || lookup == '6' || lookup == '7' || lookup == '8' || lookup == '9') {
+			finalState = true;
+			needsBacking = false;
+			tokenHolder = "floatnum";
+			state = 1;
+			return state;
+			break;
 		}
 		else {
 			finalState = true;
@@ -552,16 +561,31 @@ string checkReservedWords(string token) {
 	return newToken;
 }
 
-int main() {
+void createTokenFile(string fileName) {
 	fstream srcFile;
+	fstream targetFile;
+	fstream errorFile;
+	string newFileName;
+	for (int count = 0; fileName[count] != '.'; count++){
+		newFileName.push_back(fileName[count]);
+		
+	}
+	
 	int currentRow = 0;
 	srcFile.open("test.text", ios::in);
 	if (srcFile.is_open()) {
 		string textLine;
-		while (getline(srcFile, textLine)) {
+		while (getline(srcFile, textLine)) { // 
 			fileRows.push_back(textLine);
 		}
+		srcFile.close();
 	}
+	else {
+		cout << "Can't open file" << endl;
+	}
+
+	string ErroName = newFileName + ".outlexerrors";
+	newFileName = newFileName + ".outlextokens";
 
 	while (!fileRows.empty()) {
 		string token = nextToken();
@@ -592,6 +616,7 @@ int main() {
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 				}
 				cout << "[" << token << ", " << lexeme << ", " << lineCounter << "]";
+
 			}
 		}
 		tokenHolder = "";
@@ -599,6 +624,13 @@ int main() {
 		needsBacking = false;
 		lexeme = "";
 	}
+
+}
+
+
+int main() {
+	string testFile1 = "test.text";
+	createTokenFile(testFile1);
 
 	return 0;
 }

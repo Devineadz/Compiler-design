@@ -13,12 +13,17 @@ bool needsBacking = false;
 int lineCounter = 0;
 string nextLine = ""; 
 bool isLast = false;
+bool endFile = false;
 
 char nextChar() {
 		while (nextLine == "") {
+			if (fileRows.empty()) {
+				return '+';
+				endFile = true;
+			}
 			lineCounter++;
 			nextLine = fileRows.front();
-			fileRows.erase(fileRows.begin()); 
+			fileRows.erase(fileRows.begin());
 		}
 		char c = nextLine.at(0);
 		lexeme = lexeme + c;
@@ -384,7 +389,7 @@ int table(int state, char lookup) {
 		if (lookup == '=') {
 			finalState = true;
 			needsBacking = false;
-			tokenHolder = " geq"; 
+			tokenHolder = "geq"; 
 			state = 1;
 		}
 		// >
@@ -486,6 +491,9 @@ string nextToken() {
 	string token = "";
 	do {
 		char lookup = nextChar();
+		if (endFile == true) {
+			return token;
+		}
 		state = table(state, lookup);
 		if (isFinalState())
 			token = createToken();
@@ -568,11 +576,10 @@ void createTokenFile(string fileName) {
 	string newFileName;
 	for (int count = 0; fileName[count] != '.'; count++){
 		newFileName.push_back(fileName[count]);
-		
 	}
 	
 	int currentRow = 0;
-	srcFile.open("test.text", ios::in);
+	srcFile.open(fileName, ios::in);
 	if (srcFile.is_open()) {
 		string textLine;
 		while (getline(srcFile, textLine)) { // 
@@ -593,7 +600,6 @@ void createTokenFile(string fileName) {
 		if (token == "error" || token == "invalid character") {
 			errorFile.open(errorName, ios::app);
 			if (errorFile.is_open()) {
-				cout << "writing to file";
 				errorFile << "[" << token << ", " << lexeme << ", " << lineCounter << "]\n" ;
 			}
 			errorFile.close();
@@ -622,8 +628,6 @@ void createTokenFile(string fileName) {
 					targetFile << "[" << token << ", " << lexeme << ", " << lineCounter << "]\n";
 				}
 				targetFile.close();
-				cout << "[" << token << ", " << lexeme << ", " << lineCounter << "]";
-
 			}
 		}
 		tokenHolder = "";
@@ -631,13 +635,26 @@ void createTokenFile(string fileName) {
 		needsBacking = false;
 		lexeme = "";
 	}
+	lexeme = "";
+	tokenHolder = "";
+	finalState = false;
+	needsBacking = false;
+	lineCounter = 0;
+	nextLine = "";
+	isLast = false;
 
 }
 
 
 int main() {
-	string testFile1 = "test.text";
+	string testFile1 = "test.src";
 	createTokenFile(testFile1);
+
+	string testFile2 = "lexpositivegrading.src";
+	createTokenFile(testFile2);
+
+	string testFile3 = "lexnegativegrading.src";
+	createTokenFile(testFile3);
 
 	return 0;
 }

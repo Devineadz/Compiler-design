@@ -604,6 +604,13 @@ void createTokenFile(string fileName) { // creates a file of tokens
 	string errorName = newFileName + ".outlexerrors";
 	newFileName = newFileName + ".outlextokens";
 
+	errorFile.open(errorName, ofstream::out | ofstream::trunc); // clear contents from files
+	errorFile.close();
+
+	targetFile.open(newFileName, ofstream::out | ofstream::trunc);
+	targetFile.close();
+	
+
 
 	while (!fileRows.empty()) {
 		string token = nextToken();

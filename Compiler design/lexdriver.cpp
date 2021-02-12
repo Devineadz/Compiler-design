@@ -15,26 +15,27 @@ string nextLine = "";
 bool isLast = false;
 bool endFile = false;
 
+// Get the next character
 char nextChar() {
-		while (nextLine == "") {
+		while (nextLine == "") { // loops until it gets a string with characters from the vector
 			if (fileRows.empty()) {
 				return '+';
 				endFile = true;
 			}
 			lineCounter++;
-			nextLine = fileRows.front();
-			fileRows.erase(fileRows.begin());
+			nextLine = fileRows.front(); // gets the first string from vector
+			fileRows.erase(fileRows.begin()); // removes the first element from vector after consuming
 		}
-		char c = nextLine.at(0);
-		lexeme = lexeme + c;
-		nextLine.erase(0, 1);
-		if (nextLine == "") {
+		char c = nextLine.at(0); // gets the first character from string
+		lexeme = lexeme + c; // saves the character in a lexeme
+		nextLine.erase(0, 1); // erase first character from string after consuming
+		if (nextLine == "") { // checks if string is now empty and if the character was last in the string
 			isLast = true;
 		}
 		return c;
 }
 
-bool isFinalState() {
+bool isFinalState() { // checks if the state is a final state
 	if (finalState == true) {
 		isLast = false;
 		return true;
@@ -43,18 +44,18 @@ bool isFinalState() {
 		return false;
 }
 
-string createToken() {
+string createToken() { 
 	return tokenHolder;
 }
 
-bool backUp() {
+bool backUp() { // checks if backup needed
 	if (needsBacking == true)
 		return true;
 	else
 		return false;
 }
 
-void backUpChar() {
+void backUpChar() { // removes the last character from lexeme and returns it back to the line string
 	nextLine = lexeme.at(lexeme.length() - 1) + nextLine;
 	lexeme.erase(lexeme.length() - 1);
 }
@@ -64,7 +65,7 @@ void backUpChar() {
 int table(int state, char lookup) {
 	switch (state) {
 	case 1: //A
-		if ((lookup >= 'a' && lookup <= 'z') || (lookup >= 'A' && lookup <= 'Z')) {
+		if ((lookup >= 'a' && lookup <= 'z') || (lookup >= 'A' && lookup <= 'Z')) { // letters
 			if (isLast == true) {
 				finalState = true;
 				tokenHolder = "id";
@@ -72,7 +73,7 @@ int table(int state, char lookup) {
 			else
 				state = 4;
 		}
-		else if (lookup == '1' || lookup == '2' || lookup == '3' || lookup == '4' || lookup == '5' || lookup == '6' || lookup == '7' || lookup == '8' || lookup == '9') {
+		else if (lookup == '1' || lookup == '2' || lookup == '3' || lookup == '4' || lookup == '5' || lookup == '6' || lookup == '7' || lookup == '8' || lookup == '9') { // non zero
 			if (isLast == true) {
 				finalState = true;
 				tokenHolder = "int";
@@ -95,6 +96,7 @@ int table(int state, char lookup) {
 			else
 				state = 5;
 		}
+		// single character operators
 		else if (lookup == '+') {
 			finalState = true;
 			tokenHolder = "plus";
@@ -110,14 +112,6 @@ int table(int state, char lookup) {
 		else if (lookup == '.') {
 			finalState = true;
 			tokenHolder = "dot";
-		}
-		else if (lookup == '=') {
-			if (isLast == true) {
-				finalState = true;
-				tokenHolder = "eq";
-			}
-			else
-				state = 28;
 		}
 		else if (lookup == '(') {
 			finalState = true;
@@ -167,6 +161,15 @@ int table(int state, char lookup) {
 			finalState = true;
 			tokenHolder = "qmark";
 		}
+		// other operators
+		else if (lookup == '=') {
+			if (isLast == true) {
+				finalState = true;
+				tokenHolder = "eq";
+			}
+			else
+				state = 28;
+		}
 		else if (lookup == '<') {
 			if (isLast == true) {
 				finalState = true;
@@ -208,7 +211,7 @@ int table(int state, char lookup) {
 		}
 		return state;
 		break;
-	case 2: // B
+	case 2: // B int or float
 		if (lookup == '0' || lookup == '1' || lookup == '2' || lookup == '3' || lookup == '4' || lookup == '5' || lookup == '6' || lookup == '7' || lookup == '8' || lookup == '9') {
 			if (isLast == true) {
 				finalState = true;
@@ -220,7 +223,7 @@ int table(int state, char lookup) {
 		else if (lookup == '.') {
 			state = 6;
 		}
-		else {
+		else { // if next char not an integer or ., returns int
 			finalState = true;
 			needsBacking = true;
 			tokenHolder = "intnum";
@@ -228,11 +231,11 @@ int table(int state, char lookup) {
 		}
 		return state;
 		break;
-	case 3: // C
+	case 3: // C continues to check for float or int
 		if (lookup == '.') {
 			state = 6;
 		}
-		else {
+		else { 
 			finalState = true;
 			needsBacking = true;
 			tokenHolder = "intnum";
@@ -240,7 +243,7 @@ int table(int state, char lookup) {
 		}
 		return state;
 		break;
-	case 4: // D
+	case 4: // D id 
 		if ((lookup >= 'a' && lookup <= 'z') || (lookup >= 'A' && lookup <= 'Z') || lookup == '0' || lookup == '1' || lookup == '2' || lookup == '3' || lookup == '4' || lookup == '5' || lookup == '6' || lookup == '7' || lookup == '8' || lookup == '9' || (lookup == '_')) {
 			if (isLast == true) {
 				finalState = true;
@@ -255,7 +258,7 @@ int table(int state, char lookup) {
 		}
 		return state;
 		break;
-	case 5: // E
+	case 5: // E string literals
 		if ((lookup >= 'a' && lookup <= 'z') || (lookup >= 'A' && lookup <= 'Z') || lookup == '0' || lookup == '1' || lookup == '2' || lookup == '3' || lookup == '4' || lookup == '5' || lookup == '6' || lookup == '7' || lookup == '8' || lookup == '9' || (lookup == ' ')) {}
 		else if (lookup == '"') {
 			finalState = true;
@@ -269,7 +272,7 @@ int table(int state, char lookup) {
 		}
 		return state;
 		break;
-	case 6: // F
+	case 6: // F float
 		if (lookup == '0' || lookup == '1' || lookup == '2' || lookup == '3' || lookup == '4' || lookup == '5' || lookup == '6' || lookup == '7' || lookup == '8' || lookup == '9') {
 			state = 8;
 		}
@@ -280,7 +283,7 @@ int table(int state, char lookup) {
 		}
 		return state;
 		break;
-	case 8: // H
+	case 8: // H continue float
 		if (lookup == '1' || lookup == '2' || lookup == '3' || lookup == '4' || lookup == '5' || lookup == '6' || lookup == '7' || lookup == '8' || lookup == '9') {}
 		else if (lookup == '0') {
 			state = 9;
@@ -296,7 +299,7 @@ int table(int state, char lookup) {
 		}
 		return state;
 		break;
-	case 9: // I
+	case 9: // I float
 		if (lookup == '1' || lookup == '2' || lookup == '3' || lookup == '4' || lookup == '5' || lookup == '6' || lookup == '7' || lookup == '8' || lookup == '9') {
 			state = 8;
 		}
@@ -308,7 +311,7 @@ int table(int state, char lookup) {
 		}
 		return state;
 		break;
-	case 10: // J
+	case 10: // J float
 		if (lookup == '+' || lookup == '-') {
 			state = 11;
 		}
@@ -327,7 +330,7 @@ int table(int state, char lookup) {
 		}
 		return state;
 		break;
-	case 11: // K
+	case 11: // K float final
 		if (lookup == '0' || lookup == '1' || lookup == '2' || lookup == '3' || lookup == '4' || lookup == '5' || lookup == '6' || lookup == '7' || lookup == '8' || lookup == '9') {
 			finalState = true;
 			needsBacking = false;
@@ -455,6 +458,12 @@ int table(int state, char lookup) {
 	case 39: // block comment
 		if (lookup == '*')
 			state = 47;
+		else if (isLast == true && fileRows.empty()) {
+			finalState = true;
+			needsBacking = false;
+			tokenHolder = "error";
+			state = 1;
+		}
 		return state;
 		break;
 	case 40: //inline comment
@@ -486,12 +495,13 @@ int table(int state, char lookup) {
 	}
 }
 
-string nextToken() {
+string nextToken() { // gets the next token
 	int state = 1;
 	string token = "";
 	do {
 		char lookup = nextChar();
 		if (endFile == true) {
+			token = "";
 			return token;
 		}
 		state = table(state, lookup);
@@ -504,7 +514,7 @@ string nextToken() {
 	return token;
 }
 
-string checkReservedWords(string token) {
+string checkReservedWords(string token) { // checks if an id is a reserved word and changes token if it is
 	string newToken = token;
 	if (lexeme == "if") {
 		newToken = "if";
@@ -569,12 +579,12 @@ string checkReservedWords(string token) {
 	return newToken;
 }
 
-void createTokenFile(string fileName) {
+void createTokenFile(string fileName) { // creates a file of tokens
 	fstream srcFile;
 	fstream targetFile;
 	fstream errorFile;
 	string newFileName;
-	for (int count = 0; fileName[count] != '.'; count++){
+	for (int count = 0; fileName[count] != '.'; count++){ // gets the name from the original file name
 		newFileName.push_back(fileName[count]);
 	}
 	
@@ -582,7 +592,7 @@ void createTokenFile(string fileName) {
 	srcFile.open(fileName, ios::in);
 	if (srcFile.is_open()) {
 		string textLine;
-		while (getline(srcFile, textLine)) { // 
+		while (getline(srcFile, textLine)) { // stores the source file into a vector
 			fileRows.push_back(textLine);
 		}
 		srcFile.close();
@@ -597,7 +607,7 @@ void createTokenFile(string fileName) {
 
 	while (!fileRows.empty()) {
 		string token = nextToken();
-		if (token == "error" || token == "invalid character") {
+		if (token == "error" || token == "invalid character") { // saves errors
 			errorFile.open(errorName, ios::app);
 			if (errorFile.is_open()) {
 				errorFile << "[" << token << ", " << lexeme << ", " << lineCounter << "]\n" ;
@@ -635,6 +645,7 @@ void createTokenFile(string fileName) {
 		needsBacking = false;
 		lexeme = "";
 	}
+	// reset all states and name holders
 	lexeme = "";
 	tokenHolder = "";
 	finalState = false;

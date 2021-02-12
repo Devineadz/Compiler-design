@@ -20,7 +20,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="test.text">
+    <None Include="test.src">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>

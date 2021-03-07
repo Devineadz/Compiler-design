@@ -139,10 +139,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="lexdriver.cpp" />
+    <ClCompile Include="lexer.cpp" />
+    <ClCompile Include="parser.cpp" />
+    <ClCompile Include="parserdriver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="test.src" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="lexer.h" />
+    <ClInclude Include="parser.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

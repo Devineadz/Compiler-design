@@ -15,7 +15,7 @@ public:
 	~lexer();
 
 	string checkReservedWords(string token);
-	string getNextToken();
+	string* getNextToken();
 private:
 	string nextToken();
 	vector<string> fileRows;

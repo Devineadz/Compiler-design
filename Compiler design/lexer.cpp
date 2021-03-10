@@ -604,37 +604,42 @@ string lexer::checkReservedWords(string token) { // checks if an id is a reserve
 	return newToken;
 }
 
-string lexer::getNextToken() { // reads file and gets the token
+string* lexer::getNextToken() { // reads file and gets the token
 	tokenHolder = "";
 	finalState = false;
 	needsBacking = false;
 	lexeme = "";
 
 	while (!fileRows.empty()) {
-		string token = nextToken();
-		if (token == "error" || token == "invalid character") { // returns error string
-			return "[" + token + ", " + lexeme + ", " + to_string(lineCounter) + "]\n" ;
+		static string token[3];
+		token[0] = nextToken();
+		if (token[0] == "error" || token[0] == "invalid character") { // returns error string
+			token[1] = lexeme;
+			token[2] = to_string(lineCounter);
+			return token;
 		}
 		else {
-			if (token != "empty") { // check the list of reserved words and rename token if found in list
-				if (token == "id") {
-					token = checkReservedWords(token);
+			if (token[0] != "empty") { // check the list of reserved words and rename token if found in list
+				if (token[0] == "id") {
+					token[0] = checkReservedWords(token[0]);
 				}
-				if (token == "stringlit") { //remove "" from strings
+				if (token[0] == "stringlit") { //remove "" from strings
 					lexeme.erase(0, 1);
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 				}
-				if (token == "inlinecmt") { // remove // from inline comments
+				if (token[0] == "inlinecmt") { // remove // from inline comments
 					lexeme.erase(0, 1);
 					lexeme.erase(0, 1);
 				}
-				if (token == "blockcmt") { // remove /**/ from block comments
+				if (token[0] == "blockcmt") { // remove /**/ from block comments
 					lexeme.erase(0, 1);
 					lexeme.erase(0, 1);
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 				}
-				return "[" + token + ", " + lexeme + ", " + to_string(lineCounter) + "]\n";
+				token[1] = lexeme;
+				token[2] = to_string(lineCounter);
+				return token;
 			}
 		}
 	}

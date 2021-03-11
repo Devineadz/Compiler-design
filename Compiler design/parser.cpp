@@ -54,7 +54,7 @@ bool parser::skipErrors(vector<string>firsts, vector<string>follows)
 				for (vector<string>::iterator it2 = follows.begin(); it2 < follows.end(); ++it)
 					if (*it == "epsilon" && lookahead[0] == *it2)
 						lookaheadCheck = true;
-						return false;
+				return false;
 			}
 		}
 	}
@@ -84,13 +84,15 @@ bool parser::parse()
 
 bool parser::start()
 {
-	vector<string>firsts;
-	vector<string>follows;
 	firsts.push_back("main");
 	firsts.push_back("class");
 	firsts.push_back("main");
 	follows.push_back("epsilon");
-	if (lookahead[0] == "main" || lookahead[0] == "class" || lookahead[0]== "func") {
+	if (!skipErrors(firsts, follows))
+		return false;
+	firsts.clear();
+	follows.clear();
+	if (lookahead[0] == "main" || lookahead[0] == "class" || lookahead[0] == "func") {
 		if (prog()) {
 			return(true);
 		}
@@ -99,6 +101,63 @@ bool parser::start()
 }
 
 bool parser::prog()
+{
+	firsts.push_back("main");
+	firsts.push_back("class");
+	firsts.push_back("main");
+	follows.push_back("epsilon");
+	if (!skipErrors(firsts, follows))
+		return false;
+	firsts.clear();
+	follows.clear();
+
+	if (lookahead[0] == "class") {
+		while (lookahead[0] == "class") {
+			if (classdecl()) {}
+			else
+				return false();
+		}
+	}
+	if (lookahead[0] == "func") {
+		while (lookahead[0] == "func"){
+			if (funcDef()) {}
+			else
+				return false();
+}
+	}
+	if (lookahead[0] == "main") {
+		if (match("main") && funcbody()) {
+			return(true);
+		}
+	}
+	return false;
+}
+
+bool parser::classdecl()
+{
+	firsts.push_back("class");
+	follows.push_back("func");
+	follows.push_back("main");
+	if (!skipErrors(firsts, follows))
+		return false;
+	firsts.clear();
+	follows.clear();
+	if (lookahead[0] == "class") {
+		if (match("class") && match("id")) {
+			if (lookahead[0] == "inherits") {
+				if (inherit()) {}
+				else
+					return false;
+			}
+			else if(lookahead[0] == "{")
+				if (match("{")) {
+
+				}
+		}
+	}
+}
+
+bool parser::funcDef()
 {
 	return false;
 }
@@ -113,4 +172,14 @@ bool parser::match(string token)
 		lookahead = nextToken();
 			return false;
 	}
+}
+
+bool parser::reptprog1()
+{
+	return false;
+}
+
+bool parser::funcbody()
+{
+	return false;
 }

@@ -13,21 +13,27 @@ class parser {
 public:
 	parser(string path);
 	~parser();
-private:
-	string* nextToken(); // array
-	string token;
+	bool parse();
 	string token_path;
-	lexer* tokenizer = new lexer(token_path);
-	string* lookahead;
+private:
+	void nextToken(); // array
+	bool eof;
+	string token;
+	lexer* tokenizer;
+	string lookahead[3];
 	vector<string>firsts;
 	vector<string>follows;
+	string derivation;
 	bool skipErrors(vector<string>firsts, vector<string>follows);
+	fstream derivationFile;
 	fstream errorFile;
 	string errorName;
-	void initializeErrorfile(string fileName);
+	string derivationName;
+	void replace(string deriv_func, string deriv_repl);
+	void writeToDerivation();
+	void initializeFile(string fileName);
 
 
-	bool parse();
 	bool start();
 	bool prog();
 	bool classdecl();
@@ -59,6 +65,8 @@ private:
 	bool expr();
 	bool statBlock();
 	bool variable();
+	bool variableIdnest();
+	bool variableIdNestTail();
 	bool funcOrAssignStatIdnest();
 	bool indiceRep();
 	bool funcOrAssignStatIdnestVarTail();
@@ -70,6 +78,7 @@ private:
 	bool arithExpr();
 	bool exprTail();
 	bool term();
+	bool termTail();
 	bool arithExprTail();
 	bool factor();
 	bool funcOrVar();
@@ -78,5 +87,8 @@ private:
 	bool funcOrVarIdnestTail();
 	bool addOp();
 	bool relOp();
+	bool assignStatTail();
+	bool assignOp();
+	bool multOp();
 
 };

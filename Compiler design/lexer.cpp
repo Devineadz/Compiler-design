@@ -4,20 +4,20 @@ using namespace std;
 
 lexer::lexer(string path)
 {
-	vector<string> fileRows = tokenVector(path);
-	string lexeme = "";
-	string tokenHolder = "";
-	bool finalState = false;
-	bool needsBacking = false;
-	int lineCounter = 0;
-	string nextLine = "";
-	bool isLast = false;
-	bool endFile = false;
+	string newpath = path;
+	fileRows = tokenVector(newpath);
+	tokenHolder = "";
+	finalState = false;
+	lexeme = "";
+	needsBacking = false;
+	lineCounter = 0;
+	nextLine = "";
+	isLast = false;
+	endFile = false;
 }
 
 lexer::~lexer()
 {
-	delete &fileRows;
 }
 
 vector<string> lexer::tokenVector(string path)
@@ -25,7 +25,8 @@ vector<string> lexer::tokenVector(string path)
 	fstream srcFile;
 	vector<string>newRows;
 	int currentRow = 0;
-	srcFile.open(path, ios::in);
+	string filepath = path;
+	srcFile.open(filepath, ios::in);
 	if (srcFile.is_open()) {
 		string textLine;
 		while (getline(srcFile, textLine)) { // stores the source file into a vector
@@ -44,8 +45,8 @@ vector<string> lexer::tokenVector(string path)
 char lexer::nextChar() {
 		while (nextLine == "") { // loops until it gets a string with characters from the vector
 			if (fileRows.empty()) {
-				return '+';
 				endFile = true;
+				return '$';
 			}
 			lineCounter++;
 			nextLine = fileRows.front(); // gets the first string from vector
@@ -62,6 +63,7 @@ char lexer::nextChar() {
 
 bool lexer::isFinalState() { // checks if the state is a final state
 	if (finalState == true) {
+		finalState = false;
 		isLast = false;
 		return true;
 	}
@@ -84,8 +86,6 @@ void lexer::backUpChar() { // removes the last character from lexeme and returns
 	nextLine = lexeme.at(lexeme.length() - 1) + nextLine;
 	lexeme.erase(lexeme.length() - 1);
 }
-
-
 
 int lexer::table(int state, char lookup) {
 	switch (state) {
@@ -229,6 +229,7 @@ int lexer::table(int state, char lookup) {
 		else if (lookup == ' ' || lookup == '\t') { // to ignore spaces and tabs
 			finalState = true;
 			tokenHolder = "empty";
+			lexeme.erase(lexeme.length() - 1);
 		}
 		else {
 			finalState = true;
@@ -469,7 +470,7 @@ int lexer::table(int state, char lookup) {
 		if (lookup == ':') {
 			finalState = true;
 			needsBacking = false;
-			tokenHolder = "coloncolon"; 
+			tokenHolder = "sr"; 
 			state = 1;
 		}
 		else {
@@ -517,6 +518,7 @@ int lexer::table(int state, char lookup) {
 		break;
 	default:
 		cout << "No such case";
+		return state;
 	}
 }
 
@@ -526,15 +528,15 @@ string lexer::nextToken() { // gets the next token
 	do {
 		char lookup = nextChar();
 		if (endFile == true) {
-			token = "";
+			token = "$";
 			return token;
 		}
 		state = table(state, lookup);
-		if (isFinalState())
-			token = createToken();
 		if (backUp()) {
 			backUpChar();
 		}
+		if (isFinalState())
+			token = createToken();
 	} while (token == "");
 	return token;
 }
@@ -604,46 +606,56 @@ string lexer::checkReservedWords(string token) { // checks if an id is a reserve
 	return newToken;
 }
 
-string* lexer::getNextToken() { // reads file and gets the token
+string lexer::getNextToken() { // reads file and gets the token
+
 	tokenHolder = "";
 	finalState = false;
 	needsBacking = false;
 	lexeme = "";
-
+	string token;
+	
 	while (!fileRows.empty()) {
-		static string token[3];
-		token[0] = nextToken();
-		if (token[0] == "error" || token[0] == "invalid character") { // returns error string
-			token[1] = lexeme;
-			token[2] = to_string(lineCounter);
+		if (endFile == true) {
+			token = "$";
+		}
+		token = nextToken();
+		if (token == "error" || token == "invalid character") { // returns error string
 			return token;
 		}
 		else {
-			if (token[0] != "empty") { // check the list of reserved words and rename token if found in list
-				if (token[0] == "id") {
-					token[0] = checkReservedWords(token[0]);
+			if (token != "empty") { // check the list of reserved words and rename token if found in list
+				if (token == "id") {
+					token = checkReservedWords(token);
+					return token;
 				}
-				if (token[0] == "stringlit") { //remove "" from strings
+				else if (token == "stringlit") { //remove "" from strings
 					lexeme.erase(0, 1);
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 				}
-				if (token[0] == "inlinecmt") { // remove // from inline comments
+				else if (token == "inlinecmt") { // remove // from inline comments
 					lexeme.erase(0, 1);
 					lexeme.erase(0, 1);
 				}
-				if (token[0] == "blockcmt") { // remove /**/ from block comments
+				else if (token == "blockcmt") { // remove /**/ from block comments
 					lexeme.erase(0, 1);
 					lexeme.erase(0, 1);
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 				}
-				token[1] = lexeme;
-				token[2] = to_string(lineCounter);
 				return token;
 			}
 		}
 	}
-
-
+	token = "$";
+	return token;
 }
 
+string lexer::getLexeme()
+{
+	return lexeme;
+}
+
+string lexer::getRow()
+{
+	return to_string(lineCounter);
+}

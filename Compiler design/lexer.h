@@ -15,19 +15,21 @@ public:
 	~lexer();
 
 	string checkReservedWords(string token);
-	string* getNextToken();
+	string getNextToken();
+	string getLexeme();
+	string getRow();
 private:
 	string nextToken();
 	vector<string> fileRows;
-	string lexeme = "";
-	string tokenHolder = "";
-	bool finalState = false;
-	bool needsBacking = false;
-	int lineCounter = 0;
-	string nextLine = "";
-	bool isLast = false;
-	bool endFile = false;
-	vector<string> tokenVector(string path);
+	string lexeme;
+	string tokenHolder;
+	bool finalState;
+	bool needsBacking;
+	int lineCounter;
+	string nextLine;
+	bool isLast;
+	bool endFile;
+	vector<string> tokenVector(string newpath);
 	char nextChar();
 	bool isFinalState();
 	string createToken();

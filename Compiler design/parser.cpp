@@ -6,6 +6,7 @@ parser::parser(string path)
 	tokenizer = new lexer(token_path);
 	initializeFile(path);
 	eof = false;
+	ast = new Prog();
 }
 
 parser::~parser()
@@ -14,6 +15,9 @@ parser::~parser()
 
 void parser::nextToken()
 {	
+	if (lookahead[0] == "$") {
+		return;
+	}
 	if (eof == true) {
 		errorFile.open(errorName, ios::app);
 		if (errorFile.is_open()) {
@@ -34,7 +38,6 @@ void parser::nextToken()
 	lookahead[0] = placeHolder;
 	lookahead[1] = placeHolder2;
 	lookahead[2] = placeHolder3;
-	cout << lookahead[0];
 }
 
 bool parser::skipErrors(vector<string>firsts, vector<string>follows)
@@ -85,31 +88,43 @@ void parser::initializeFile(string fileName)
 	}
 	errorName = newFileName + ".outsyntaxerrors";
 	derivationName = newFileName + ".outderivation";
+	diagramName = newFileName + ".svg";
 
 	errorFile.open(errorName, ofstream::out | ofstream::trunc); // clear contents from files
 	errorFile.close();
 
 	derivationFile.open(derivationName, ofstream::out | ofstream::trunc); // clear contents from files
 	derivationFile.close();
+
+	diagramFile.open(diagramName, ofstream::out | ofstream::trunc); // clear contents from files
+	if (diagramFile .is_open()) {
+		diagramFile << "digraph EST{" << "\n";
+	}
+	diagramFile.close();
 }
 
 bool parser::parse()
 {
 	nextToken();
-	if (start() & match("$"))
+	if (start() & match("$")) {
+		cout << "Parsing ready";
 		return true;
+	}
 	else
 		return false;
 }
 
 bool parser::start()
 {
+
 	derivation = "START";
 	writeToDerivation();
 	firsts.push_back("main");
 	firsts.push_back("class");
 	firsts.push_back("func");
-	follows.push_back("$");
+	follows.push_back("$");	
+	ESTmaker* est = new ESTmaker();
+	est_stack.push(ast);
 	if (!skipErrors(firsts, follows))
 		return false;
 	firsts.clear();
@@ -117,6 +132,11 @@ bool parser::start()
 	if (lookahead[0] == "main" || lookahead[0] == "class" || lookahead[0] == "func") {
 		replace("START", "PROG");
 		if (prog()) {
+			diagramFile.open(diagramName, ios::app);
+			if (diagramFile.is_open()) {
+				diagramFile << "}";
+			}
+			diagramFile.close();
 			return(true);
 		}
 	}
@@ -132,6 +152,15 @@ void parser::writeToDerivation()
 	derivationFile.close();
 }
 
+void parser::diagramToFile(string parent, string child)
+{
+	diagramFile.open(diagramName, ios::app);
+	if (diagramFile.is_open()) {
+		diagramFile << parent << " -> " << child << "\n";
+	}
+	diagramFile.close();
+}
+
 void parser::replace(string deriv_func, string deriv_repl)
 {
 	size_t found = derivation.find(deriv_func);
@@ -144,6 +173,8 @@ void parser::replace(string deriv_func, string deriv_repl)
 
 bool parser::prog()
 {
+	EST* prog_ast = est_stack.top();
+	est_stack.pop();
 	firsts.push_back("main");
 	firsts.push_back("class");
 	firsts.push_back("func");
@@ -153,10 +184,26 @@ bool parser::prog()
 	firsts.clear();
 	follows.clear();
 
+
 	if (lookahead[0] == "main" || lookahead[0] == "class" || lookahead[0] == "func") {
 		replace("PROG", "CLASSDECL FUNCDEF main FUNCBODY");
-		if (classdecl() & funcDef() & match("main") & funcbody())
+		EST* class_decl_est = est->makeNode("class_decl");
+		EST* func_def_est = est->makeNode("func_def");
+		EST* func_body_est = est->makeNode("func_body");
+		diagramToFile("PROG", "CLASSDECL");
+		diagramToFile("PROG", "FUNCDEF");
+		diagramToFile("PROG", "FUNCBODY");
+		est_stack.push(func_body_est);
+		est_stack.push(func_def_est);
+		est_stack.push(class_decl_est);
+
+
+		if (classdecl() & funcDef() & match("main") & funcbody()){
+			prog_ast = est_stack.top();
+			est_stack.pop();
+			est_stack.push(prog_ast);
 			return true;
+	}
 		else
 			return false;
 	}
@@ -166,6 +213,11 @@ bool parser::prog()
 
 bool parser::classdecl()
 {
+	EST* classd_ast = est_stack.top();
+	est_stack.pop();
+	EST* func_def_est = est_stack.top();
+	est_stack.pop();
+
 	firsts.push_back("class");
 	firsts.push_back("epsilon");
 	follows.push_back("func");
@@ -177,13 +229,36 @@ bool parser::classdecl()
 
 	if (lookahead[0] == "class") {
 		replace("CLASSDECL", "class id INHERIT opencubr CLASSDECLBODY closecubr semi CLASSDECL");
-		if (match("class") & match("id") & inherit() & match("opencubr") & classdeclbody() & match("closecubr") & match("semi") & classdecl()) {
-			return true;
+		EST* inherit_ast = est->makeNode("inherit");
+		EST* classdeclbody_ast = est->makeNode("classdeclbody");
+		EST* classdecl_ast = est->makeNode("classdecl");
+
+		est_stack.push(classdecl_ast);
+		est_stack.push(classdeclbody_ast);
+		est_stack.push(inherit_ast);
+		if (match("class")) {
+			string token_id = lookahead[1];
+			if (match("id") & inherit() & match("opencubr") & classdeclbody() & match("closecubr") & match("semi") & classdecl()) {
+				// check that classdeclbody has three on stack
+				EST* id_ast = est->makeNode("Class", token_id);
+				// make family call
+				// push family on stack
+				string idToFile = "class" + token_id;
+				diagramToFile(idToFile, "inherit");
+				diagramToFile(idToFile, "classdeclbody");
+				return true;
+			}
+			else
+				return false;	
 		}
 		else
 			return false;
+
 	}
 	else if (lookahead[0] == "func" || lookahead[0] == "main") {
+		EST* class_new = est->makeNode("classdecl");
+		class_new = classd_ast;
+		est_stack.push(class_new);
 		replace("CLASSDECL ", "");
 		return true;
 	}
@@ -193,6 +268,11 @@ bool parser::classdecl()
 
 bool parser::funcDef()
 {
+	EST* funcdef_ast = est_stack.top();
+	est_stack.pop();
+	EST* func_body_est = est_stack.top();
+	est_stack.pop();
+
 	firsts.push_back("func");
 	firsts.push_back("epsilon");
 	follows.push_back("main");
@@ -201,7 +281,16 @@ bool parser::funcDef()
 	firsts.clear();
 	follows.clear();
 
+
+
 	if (lookahead[0] == "func") {
+		// Fix and make family
+		EST* function_ast = est->makeNode("function");
+		EST* funcdef_ast = est->makeNode("funcdef");
+
+		est_stack.push(function_ast);
+		est_stack.push(funcdef_ast);
+
 		replace("FUNCDEF", "FUNCTION FUNCDEF");
 		if (function() & funcDef()) {
 			return true;
@@ -210,6 +299,8 @@ bool parser::funcDef()
 			return false;
 	}
 	else if (lookahead[0] == "main") {
+		func_body_est = funcdef_ast;
+		est_stack.push(func_body_est);
 		replace("FUNCDEF ", "");
 		return true;
 	}
@@ -231,6 +322,8 @@ bool parser::match(string token)
 
 bool parser::funcbody()
 {
+	EST* funcbody_ast = est_stack.top();
+	est_stack.pop();
 	firsts.push_back("opencubr");
 	follows.push_back("main");
 	follows.push_back("func");
@@ -241,7 +334,14 @@ bool parser::funcbody()
 
 	if (lookahead[0] == "opencubr") {
 		replace("FUNCBODY", "opencubr METHODBODYVAR STATEMENTLIST closecubr");
+		EST* methodBodyVar_est = est->makeNode("methodbodyvar");
+		EST* statementList_est = est->makeNode("statementlist");
+		methodBodyVar_est->makeSiblings(statementList_est);
+		est_stack.push(statementList_est);
+		est_stack.push(methodBodyVar_est);
 		if (match("opencubr") & methodBodyVar() & statementList() & match("closecubr")) {
+			funcbody_ast = statementList_est;
+			est_stack.push(funcbody_ast);
 			return true;
 		}
 		else
@@ -558,7 +658,7 @@ bool parser::intNum()
 	follows.clear();
 	if (lookahead[0] == "intnum") {
 		replace("INTNUM ", "intnum");
-		if (match("intNum")) {
+		if (match("intnum")) {
 			return true;
 		}
 		else
@@ -798,6 +898,7 @@ bool parser::statementList()
 	firsts.push_back("id");
 	firsts.push_back("epsilon");
 	follows.push_back("closecubr");
+
 
 	if (!skipErrors(firsts, follows))
 		return false;

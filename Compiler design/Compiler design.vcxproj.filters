@@ -24,17 +24,26 @@
     <ClCompile Include="parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="EST.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="test.src">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="test2.src" />
+    <None Include="Test_error.src" />
+    <None Include="test_error2.src" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lexer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EST.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

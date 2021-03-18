@@ -7,7 +7,7 @@
 
 int main(int argc, char* argv[])
 {
-	string file = "polynomial.src"; 
+	string file = "Test_error.src"; 
 	parser* fileparser = new parser(file);
 	fileparser->parse();
 }

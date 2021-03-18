@@ -139,14 +139,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="EST.cpp" />
     <ClCompile Include="lexer.cpp" />
     <ClCompile Include="parser.cpp" />
     <ClCompile Include="parserdriver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="test.src" />
+    <None Include="test2.src" />
+    <None Include="test_error2.src" />
+    <None Include="Test_error.src" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="EST.h" />
     <ClInclude Include="lexer.h" />
     <ClInclude Include="parser.h" />
   </ItemGroup>

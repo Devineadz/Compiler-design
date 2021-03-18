@@ -614,7 +614,7 @@ string lexer::getNextToken() { // reads file and gets the token
 	lexeme = "";
 	string token;
 	
-	while (!fileRows.empty()) {
+	while (!(fileRows.empty() && isLast == true)) {
 		if (endFile == true) {
 			token = "$";
 		}

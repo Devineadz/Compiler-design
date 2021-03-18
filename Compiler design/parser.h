@@ -5,7 +5,10 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#include <stack>
+#include <typeinfo>
 #include "lexer.h"
+#include "EST.h"
 
 using namespace std;
 
@@ -15,6 +18,7 @@ public:
 	~parser();
 	bool parse();
 	string token_path;
+	stack<EST*> est_stack;
 private:
 	void nextToken(); // array
 	bool eof;
@@ -27,12 +31,16 @@ private:
 	bool skipErrors(vector<string>firsts, vector<string>follows);
 	fstream derivationFile;
 	fstream errorFile;
+	fstream diagramFile;
 	string errorName;
 	string derivationName;
+	string diagramName;
 	void replace(string deriv_func, string deriv_repl);
 	void writeToDerivation();
 	void initializeFile(string fileName);
-
+	ESTmaker* est;
+	EST* ast;
+	void diagramToFile(string parent, string child);
 
 	bool start();
 	bool prog();
@@ -90,5 +98,7 @@ private:
 	bool assignStatTail();
 	bool assignOp();
 	bool multOp();
+
+	int class_num = 0;
 
 };

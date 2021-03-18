@@ -147,6 +147,7 @@
   <ItemGroup>
     <None Include="test.src" />
     <None Include="test2.src" />
+    <None Include="test3.src" />
     <None Include="test_error2.src" />
     <None Include="Test_error.src" />
   </ItemGroup>

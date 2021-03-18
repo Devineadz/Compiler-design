@@ -35,6 +35,7 @@
     <None Include="test2.src" />
     <None Include="Test_error.src" />
     <None Include="test_error2.src" />
+    <None Include="test3.src" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lexer.h">

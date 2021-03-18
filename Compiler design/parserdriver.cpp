@@ -7,7 +7,7 @@
 
 int main(int argc, char* argv[])
 {
-	string file = "Test_error.src"; 
+	string file = "test3.src"; 
 	parser* fileparser = new parser(file);
 	fileparser->parse();
 }

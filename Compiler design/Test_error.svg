@@ -1,0 +1,13 @@
+digraph EST{
+PROG -> CLASSDECL
+PROG -> FUNCDEF
+PROG -> FUNCBODY
+classTEST3 -> inherit
+classTEST3 -> classdeclbody
+CLASSDECL -> classTEST3
+classTEST2 -> inherit
+classTEST2 -> classdeclbody
+CLASSDECL -> classTEST2
+classTEST -> inherit
+classTEST -> classdeclbody
+CLASSDECL -> classTEST

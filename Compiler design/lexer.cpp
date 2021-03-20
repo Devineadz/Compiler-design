@@ -1,26 +1,52 @@
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <vector>
-#include <algorithm>
+#include "lexer.h"
+
 using namespace std;
 
-vector<string> fileRows;
-string lexeme = "";
-string tokenHolder = "";
-bool finalState = false;
-bool needsBacking = false;
-int lineCounter = 0;
-string nextLine = ""; 
-bool isLast = false;
-bool endFile = false;
+lexer::lexer(string path)
+{
+	string newpath = path;
+	fileRows = tokenVector(newpath);
+	tokenHolder = "";
+	finalState = false;
+	lexeme = "";
+	needsBacking = false;
+	lineCounter = 0;
+	nextLine = "";
+	isLast = false;
+	endFile = false;
+}
+
+lexer::~lexer()
+{
+}
+
+vector<string> lexer::tokenVector(string path)
+{
+	fstream srcFile;
+	vector<string>newRows;
+	int currentRow = 0;
+	string filepath = path;
+	srcFile.open(filepath, ios::in);
+	if (srcFile.is_open()) {
+		string textLine;
+		while (getline(srcFile, textLine)) { // stores the source file into a vector
+			newRows.push_back(textLine);
+		}
+		srcFile.close();
+	}
+	else {
+		cout << "Can't open file" << endl;
+	}
+
+	return newRows;
+}
 
 // Get the next character
-char nextChar() {
+char lexer::nextChar() {
 		while (nextLine == "") { // loops until it gets a string with characters from the vector
 			if (fileRows.empty()) {
-				return '+';
 				endFile = true;
+				return '$';
 			}
 			lineCounter++;
 			nextLine = fileRows.front(); // gets the first string from vector
@@ -35,8 +61,9 @@ char nextChar() {
 		return c;
 }
 
-bool isFinalState() { // checks if the state is a final state
+bool lexer::isFinalState() { // checks if the state is a final state
 	if (finalState == true) {
+		finalState = false;
 		isLast = false;
 		return true;
 	}
@@ -44,25 +71,23 @@ bool isFinalState() { // checks if the state is a final state
 		return false;
 }
 
-string createToken() { 
+string lexer::createToken() { 
 	return tokenHolder;
 }
 
-bool backUp() { // checks if backup needed
+bool lexer::backUp() { // checks if backup needed
 	if (needsBacking == true)
 		return true;
 	else
 		return false;
 }
 
-void backUpChar() { // removes the last character from lexeme and returns it back to the line string
+void lexer::backUpChar() { // removes the last character from lexeme and returns it back to the line string
 	nextLine = lexeme.at(lexeme.length() - 1) + nextLine;
 	lexeme.erase(lexeme.length() - 1);
 }
 
-
-
-int table(int state, char lookup) {
+int lexer::table(int state, char lookup) {
 	switch (state) {
 	case 1: //A
 		if ((lookup >= 'a' && lookup <= 'z') || (lookup >= 'A' && lookup <= 'Z')) { // letters
@@ -204,6 +229,7 @@ int table(int state, char lookup) {
 		else if (lookup == ' ' || lookup == '\t') { // to ignore spaces and tabs
 			finalState = true;
 			tokenHolder = "empty";
+			lexeme.erase(lexeme.length() - 1);
 		}
 		else {
 			finalState = true;
@@ -444,7 +470,7 @@ int table(int state, char lookup) {
 		if (lookup == ':') {
 			finalState = true;
 			needsBacking = false;
-			tokenHolder = "coloncolon"; 
+			tokenHolder = "sr"; 
 			state = 1;
 		}
 		else {
@@ -492,29 +518,30 @@ int table(int state, char lookup) {
 		break;
 	default:
 		cout << "No such case";
+		return state;
 	}
 }
 
-string nextToken() { // gets the next token
+string lexer::nextToken() { // gets the next token
 	int state = 1;
 	string token = "";
 	do {
 		char lookup = nextChar();
 		if (endFile == true) {
-			token = "";
+			token = "$";
 			return token;
 		}
 		state = table(state, lookup);
-		if (isFinalState())
-			token = createToken();
 		if (backUp()) {
 			backUpChar();
 		}
+		if (isFinalState())
+			token = createToken();
 	} while (token == "");
 	return token;
 }
 
-string checkReservedWords(string token) { // checks if an id is a reserved word and changes token if it is
+string lexer::checkReservedWords(string token) { // checks if an id is a reserved word and changes token if it is
 	string newToken = token;
 	if (lexeme == "if") {
 		newToken = "if";
@@ -579,100 +606,56 @@ string checkReservedWords(string token) { // checks if an id is a reserved word 
 	return newToken;
 }
 
-void createTokenFile(string fileName) { // creates a file of tokens
-	fstream srcFile;
-	fstream targetFile;
-	fstream errorFile;
-	string newFileName;
-	for (int count = 0; fileName[count] != '.'; count++){ // gets the name from the original file name
-		newFileName.push_back(fileName[count]);
-	}
+string lexer::getNextToken() { // reads file and gets the token
+
+	tokenHolder = "";
+	finalState = false;
+	needsBacking = false;
+	lexeme = "";
+	string token;
 	
-	int currentRow = 0;
-	srcFile.open(fileName, ios::in);
-	if (srcFile.is_open()) {
-		string textLine;
-		while (getline(srcFile, textLine)) { // stores the source file into a vector
-			fileRows.push_back(textLine);
+	while (!(fileRows.empty() && isLast == true)) {
+		if (endFile == true) {
+			token = "$";
 		}
-		srcFile.close();
-	}
-	else {
-		cout << "Can't open file" << endl;
-	}
-
-	string errorName = newFileName + ".outlexerrors";
-	newFileName = newFileName + ".outlextokens";
-
-	errorFile.open(errorName, ofstream::out | ofstream::trunc); // clear contents from files
-	errorFile.close();
-
-	targetFile.open(newFileName, ofstream::out | ofstream::trunc);
-	targetFile.close();
-	
-
-
-	while (!fileRows.empty()) {
-		string token = nextToken();
-		if (token == "error" || token == "invalid character") { // saves errors
-			errorFile.open(errorName, ios::app);
-			if (errorFile.is_open()) {
-				errorFile << "[" << token << ", " << lexeme << ", " << lineCounter << "]\n" ;
-			}
-			errorFile.close();
+		token = nextToken();
+		if (token == "error" || token == "invalid character") { // returns error string
+			return token;
 		}
 		else {
 			if (token != "empty") { // check the list of reserved words and rename token if found in list
 				if (token == "id") {
 					token = checkReservedWords(token);
+					return token;
 				}
-				if (token == "stringlit") { //remove "" from strings
+				else if (token == "stringlit") { //remove "" from strings
 					lexeme.erase(0, 1);
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 				}
-				if (token == "inlinecmt") { // remove // from inline comments
+				else if (token == "inlinecmt") { // remove // from inline comments
 					lexeme.erase(0, 1);
 					lexeme.erase(0, 1);
 				}
-				if (token == "blockcmt") { // remove /**/ from block comments
+				else if (token == "blockcmt") { // remove /**/ from block comments
 					lexeme.erase(0, 1);
 					lexeme.erase(0, 1);
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 				}
-				targetFile.open(newFileName, ios::app);
-				if (targetFile.is_open()) {
-					targetFile << "[" << token << ", " << lexeme << ", " << lineCounter << "]\n";
-				}
-				targetFile.close();
+				return token;
 			}
 		}
-		tokenHolder = "";
-		finalState = false;
-		needsBacking = false;
-		lexeme = "";
 	}
-	// reset all states and name holders
-	lexeme = "";
-	tokenHolder = "";
-	finalState = false;
-	needsBacking = false;
-	lineCounter = 0;
-	nextLine = "";
-	isLast = false;
-
+	token = "$";
+	return token;
 }
 
+string lexer::getLexeme()
+{
+	return lexeme;
+}
 
-int main() {
-	string testFile1 = "test.src";
-	createTokenFile(testFile1);
-
-	string testFile2 = "lexpositivegrading.src";
-	createTokenFile(testFile2);
-
-	string testFile3 = "lexnegativegrading.src";
-	createTokenFile(testFile3);
-
-	return 0;
+string lexer::getRow()
+{
+	return to_string(lineCounter);
 }

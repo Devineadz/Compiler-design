@@ -1,28 +1,53 @@
-main {}
+class TEST {
+    public func tester(int x) : int;
+};
 
-    classes
+class TEST2 {
+    public float a;
+};
+
+class TEST3 inherits TEST, TEST2 {
+    public func tester(int x) : int;
+    public float a;
+    private string b;
+};
+
+func TEST::tester(int x) : int
+{
+    return (x);
+}
+
+func TEST2::throw(int y) : y
+{
+    return (y);
+}
+
+
+
+/*
+ classes
     --------------------------------------
-|X| no class declaration
+| | no class declaration
 | | class declaration
-| | multiple class declarations
-| | no data member declaration
-| | data member declaration
-| | multiple data member declaration
-| | no member function declaration
-| | member function declaration
+|x| multiple class declarations
+|x| no data member declaration
+|x| data member declaration
+|x| multiple data member declaration
+|x| no member function declaration
+|x| member function declaration
 | | multiple member function declaration
 | | no member
-| | no inherited class
+|x| no inherited class
 | | one inherited class
-| | multiple inherited classes
-| | private member specifier
-| | public member specifier
+|x| multiple inherited classes
+|x| private member specifier
+|x| public member specifier
 | | absence of member specifier
 
     functions: definitions
     --------------------------------------
-| | no main function definition (not allowed)
-|X| main function definition
+|x| no main function definition (not allowed)
+| | main function definition
 | | multiple main function definitions (not allowed)
 | | no free function definition
 | | free function definition
@@ -40,7 +65,7 @@ main {}
 
     functions: formal parameters
     --------------------------------------
-| | type: integer
+|x| type: integer
 | | type: float
 | | type: string
 | | type: id
@@ -52,9 +77,9 @@ main {}
     functions: calls
     --------------------------------------
 | | free function call
-| | member function call
+|x| member function call
 | | parameters:0
-| | parameters:1
+|x| parameters:1
 | | parameters:n
 | | array parameter - 1-dim
 | | array parameter - n-dim
@@ -86,7 +111,7 @@ main {}
 
     function body: statements
     --------------------------------------
-| | no statement
+|x| no statement
 | | 1 statement
 | | n statements
 | | if statement
@@ -139,3 +164,4 @@ main {}
 | | involving variable + idnest
 | | involving function calls
 | | involving all the above in one expression
+*/

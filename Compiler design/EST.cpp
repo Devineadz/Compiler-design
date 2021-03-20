@@ -6,12 +6,11 @@
 // rightmost sibling
 void EST::makeSiblings(EST* y)
 {
-	if (y->right_sibling == NULL) {
-		y->right_sibling = this;
-		this->parent = y->parent;
+	if (this->right_sibling == NULL) {
+		this->right_sibling = y;
 	}
 	if (y->leftmost_sibling == NULL) {
-		this->leftmost_sibling = y;
+		y->leftmost_sibling = this;
 	}
 }
 
@@ -29,6 +28,14 @@ void EST::adoptChildren(EST* y)
 
 void EST::makeFamily(EST* y)
 {
+	if (this->left_child == NULL) {
+		if (y->leftmost_sibling == NULL) {
+			this->left_child = y;
+		}
+		else
+			this->left_child = y->leftmost_sibling;	
+	}
+	y->parent = this;
 }
 
 

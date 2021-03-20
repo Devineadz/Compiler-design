@@ -1,3 +1,9 @@
+/*
+Compiler Design
+Diana Zitting-Rioux
+Recursive-descent predictive parse using stack
+*/
+
 #include "parser.h"
 
 parser::parser(string path)
@@ -13,6 +19,7 @@ parser::~parser()
 {
 }
 
+// extract next token from lexer.
 void parser::nextToken()
 {	
 	if (lookahead[0] == "$") {
@@ -40,6 +47,7 @@ void parser::nextToken()
 	lookahead[2] = placeHolder3;
 }
 
+// checks 2 vectors of first and follow sets
 bool parser::skipErrors(vector<string>firsts, vector<string>follows)
 {
 	for (vector<string>::iterator it = firsts.begin(); it < firsts.end(); it++)
@@ -80,6 +88,7 @@ bool parser::skipErrors(vector<string>firsts, vector<string>follows)
 	return false;
 }
 
+// initializes files with the file name
 void parser::initializeFile(string fileName)
 {
 	string newFileName;
@@ -103,6 +112,7 @@ void parser::initializeFile(string fileName)
 	diagramFile.close();
 }
 
+// Parsing starter
 bool parser::parse()
 {
 	nextToken();
@@ -114,6 +124,7 @@ bool parser::parse()
 		return false;
 }
 
+// Recursive descent beginning
 bool parser::start()
 {
 
@@ -143,6 +154,7 @@ bool parser::start()
 	return false;
 }
 
+// writes to derivation file
 void parser::writeToDerivation()
 {
 	derivationFile.open(derivationName, ios::app);
@@ -152,6 +164,7 @@ void parser::writeToDerivation()
 	derivationFile.close();
 }
 
+// writes to diagram file
 void parser::diagramToFile(string parent, string child)
 {
 	diagramFile.open(diagramName, ios::app);
@@ -161,6 +174,7 @@ void parser::diagramToFile(string parent, string child)
 	diagramFile.close();
 }
 
+// function for derivation file, replaces a string with another
 void parser::replace(string deriv_func, string deriv_repl)
 {
 	size_t found = derivation.find(deriv_func);
@@ -217,7 +231,7 @@ bool parser::classdecl()
 	est_stack.pop();
 	EST* func_def_est = est_stack.top();
 	est_stack.pop();
-
+	
 	firsts.push_back("class");
 	firsts.push_back("epsilon");
 	follows.push_back("func");
@@ -239,13 +253,15 @@ bool parser::classdecl()
 		if (match("class")) {
 			string token_id = lookahead[1];
 			if (match("id") & inherit() & match("opencubr") & classdeclbody() & match("closecubr") & match("semi") & classdecl()) {
-				// check that classdeclbody has three on stack
+				// Make family of nodes under classdecl and push on stack
 				EST* id_ast = est->makeNode("Class", token_id);
-				// make family call
-				// push family on stack
+				classd_ast->makeFamily(id_ast);
+				id_ast->makeSiblings(classdecl_ast);
+				est_stack.push(classd_ast);
 				string idToFile = "class" + token_id;
 				diagramToFile(idToFile, "inherit");
 				diagramToFile(idToFile, "classdeclbody");
+				diagramToFile("CLASSDECL", idToFile);
 				return true;
 			}
 			else
@@ -253,12 +269,10 @@ bool parser::classdecl()
 		}
 		else
 			return false;
-
 	}
 	else if (lookahead[0] == "func" || lookahead[0] == "main") {
-		EST* class_new = est->makeNode("classdecl");
-		class_new = classd_ast;
-		est_stack.push(class_new);
+		func_def_est = classd_ast;
+		est_stack.push(func_def_est);
 		replace("CLASSDECL ", "");
 		return true;
 	}
@@ -308,6 +322,7 @@ bool parser::funcDef()
 		return false;
 }
 
+// Does the token matching.
 bool parser::match(string token)
 {
 	if (lookahead[0] == token) {

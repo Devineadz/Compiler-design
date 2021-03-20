@@ -9,6 +9,7 @@
 
 using namespace std;
 
+// AST class, EST is parent class, all other nodes are child classes
 class EST {
 protected:
 	EST* parent;
@@ -22,7 +23,6 @@ public:
 	void makeSiblings(EST* y);
 	void adoptChildren(EST* y);
 	void makeFamily(EST* y);
-
 };
 
 class Prog : public EST {
@@ -151,6 +151,7 @@ class Empty_nody : public EST {
 
 };
 
+// Factory that makes the nodes
 class ESTmaker {
 public:
 	static EST* makeNode();

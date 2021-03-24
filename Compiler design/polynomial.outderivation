@@ -1,0 +1,13 @@
+START
+PROG
+CLASSDECL FUNCDEF main FUNCBODY
+class id INHERIT opencubr CLASSDECLBODY closecubr semi CLASSDECL FUNCDEF main FUNCBODY
+class id opencubr CLASSDECLBODY closecubr semi CLASSDECL FUNCDEF main FUNCBODY
+class id opencubr VISIBILITY MEMBERDECL CLASSDECLBODY closecubr semi CLASSDECL FUNCDEF main FUNCBODY
+class id opencubr public MEMBERDECL CLASSDECLBODY closecubr semi CLASSDECL FUNCDEF main FUNCBODY
+class id opencubr public FUNCDECL CLASSDECLBODY closecubr semi CLASSDECL FUNCDEF main FUNCBODY
+class id opencubr public func id openpar FPARAMS closepar colon FUNCDECLTAIL semi CLASSDECLBODY closecubr semi CLASSDECL FUNCDEF main FUNCBODY
+class id opencubr public func id openpar TYPE id ARRAYSIZEREPT FPARAMSTAIL closepar colon FUNCDECLTAIL semi CLASSDECLBODY closecubr semi CLASSDECL FUNCDEF main FUNCBODY
+class id opencubr public func id openpar float id ARRAYSIZEREPT FPARAMSTAIL closepar colon FUNCDECLTAIL semi CLASSDECLBODY closecubr semi CLASSDECL FUNCDEF main FUNCBODY
+class id opencubr public func id openpar float id FPARAMSTAIL closepar colon FUNCDECLTAIL semi CLASSDECLBODY closecubr semi CLASSDECL FUNCDEF main FUNCBODY
+class id opencubr public func id openpar float id closepar colon FUNCDECLTAIL semi CLASSDECLBODY closecubr semi CLASSDECL FUNCDEF main FUNCBODY

@@ -106,7 +106,7 @@ void parser::initializeFile(string fileName)
 	derivationFile.close();
 
 	diagramFile.open(diagramName, ofstream::out | ofstream::trunc); // clear contents from files
-	if (diagramFile .is_open()) {
+	if (diagramFile.is_open()) {
 		diagramFile << "digraph EST{" << "\n";
 	}
 	diagramFile.close();
@@ -164,6 +164,8 @@ void parser::writeToDerivation()
 	derivationFile.close();
 }
 
+
+
 // writes to diagram file
 void parser::diagramToFile(string parent, string child)
 {
@@ -172,6 +174,62 @@ void parser::diagramToFile(string parent, string child)
 		diagramFile << parent << " -> " << child << "\n";
 	}
 	diagramFile.close();
+}
+
+void parser::labelToFile(string child, string child_label)
+{
+	diagramFile.open(diagramName, ios::app);
+	if (diagramFile.is_open()) {
+		diagramFile << child_label + "[label=\"" + child + "\"]; " "\n";
+	}
+	diagramFile.close();
+}
+
+// pass parent and first label number
+void parser::createFamilyDiagram(EST* parent, int labelNum)
+{
+	if (parent->left_child != NULL) {
+		string ptype = parent->getType();
+		string lctype = to_string(labelNum++);
+		diagramToFile(ptype, lctype);
+		EST* child_pointer = parent->left_child;
+		while (child_pointer->right_sibling != NULL) {
+			string rstype = child_pointer->right_sibling->getType();
+			diagramToFile(ptype, to_string(labelNum++));
+			child_pointer = child_pointer->right_sibling;
+		}
+	}
+}
+
+void parser::createLabelChildDiagram(int labelNum, EST* child)
+{
+	diagramToFile(to_string(labelNum), child->getType());
+	EST* child_pointer = child;
+	while (child_pointer->right_sibling != NULL) {
+		string rstype = child_pointer->right_sibling->getType();
+		diagramToFile(to_string(labelNum), rstype);
+		child_pointer = child_pointer->right_sibling;
+	}
+}
+
+void parser::createTreeDiagram(EST* parent)
+{
+	if (parent->left_child != NULL) {
+		string ptype = parent->getType();
+		string lctype = parent->left_child->getType();
+		diagramToFile(ptype, lctype);
+		EST* child_pointer = parent->left_child;
+		while (child_pointer->right_sibling != NULL) {
+			string rstype = child_pointer->right_sibling->getType();
+			diagramToFile(ptype, rstype);
+			child_pointer = child_pointer->right_sibling;
+		}
+	}
+}
+
+void parser::createParentDiagram(int labelNum, int child_label)
+{
+	diagramToFile(to_string(labelNum), to_string(child_label));
 }
 
 // function for derivation file, replaces a string with another
@@ -204,15 +262,13 @@ bool parser::prog()
 		EST* class_decl_est = est->makeNode("class_decl");
 		EST* func_def_est = est->makeNode("func_def");
 		EST* func_body_est = est->makeNode("func_body");
-		diagramToFile("PROG", "CLASSDECL");
-		diagramToFile("PROG", "FUNCDEF");
-		diagramToFile("PROG", "FUNCBODY");
 		est_stack.push(func_body_est);
 		est_stack.push(func_def_est);
 		est_stack.push(class_decl_est);
 
 
 		if (classdecl() & funcDef() & match("main") & funcbody()){
+
 			prog_ast = est_stack.top();
 			est_stack.pop();
 			est_stack.push(prog_ast);
@@ -246,22 +302,22 @@ bool parser::classdecl()
 		EST* inherit_ast = est->makeNode("inherit");
 		EST* classdeclbody_ast = est->makeNode("classdeclbody");
 		EST* classdecl_ast = est->makeNode("classdecl");
-
 		est_stack.push(classdecl_ast);
 		est_stack.push(classdeclbody_ast);
 		est_stack.push(inherit_ast);
+
 		if (match("class")) {
 			string token_id = lookahead[1];
 			if (match("id") & inherit() & match("opencubr") & classdeclbody() & match("closecubr") & match("semi") & classdecl()) {
+				
 				// Make family of nodes under classdecl and push on stack
 				EST* id_ast = est->makeNode("Class", token_id);
-				classd_ast->makeFamily(id_ast);
-				id_ast->makeSiblings(classdecl_ast);
-				est_stack.push(classd_ast);
-				string idToFile = "class" + token_id;
-				diagramToFile(idToFile, "inherit");
-				diagramToFile(idToFile, "classdeclbody");
-				diagramToFile("CLASSDECL", idToFile);
+				id_ast->makeFamily(inherit_ast);
+				inherit_ast->makeSiblings(classdeclbody_ast);
+				est_stack.push(id_ast);
+				int inheritVal = inheritCounts.back();
+				inheritCounts.pop_back();
+				createFamilyDiagram(id_ast, inheritVal);
 				return true;
 			}
 			else
@@ -377,15 +433,36 @@ bool parser::inherit()
 	firsts.clear();
 	follows.clear();
 
+	EST* inherit_ast = est_stack.top();
+	est_stack.pop();
+	inheritCounts.push_back(labelcounter);
+	labelToFile(inherit_ast->getType(), to_string(labelcounter));
+	labelcounter++;
+	
+
 	if (lookahead[0] == "inherits") {
+		EST* nestedID = est->makeNode("nestedid");
+		est_stack.push(nestedID);
 		replace("INHERIT", "inherits id NESTEDID");
-		if (match("inherits") & match("id") & nestedId()) {
-			return true;
+		if (match("inherits")) {
+			EST* id_ast = est->makeNode("Class", lookahead[1]);
+			if (match("id") & nestedId()) {
+				inherit_ast->makeFamily(id_ast);
+				labelToFile(id_ast->getType(), to_string(idlabelcounter));
+				createParentDiagram(inheritCounts.back(), idlabelcounter);
+				idlabelcounter++;
+				id_ast->makeSiblings(nestedID);
+				est_stack.push(inherit_ast);
+				return true;
+			}
+			else
+				return false;
 		}
 		else
 			return false;
 	}
 	else if (lookahead[0] == "opencubr") {
+		est_stack.push(inherit_ast);
 		replace("INHERIT ", "");
 		return true;
 	}
@@ -403,15 +480,27 @@ bool parser::nestedId()
 	firsts.clear();
 	follows.clear();
 
+	EST* nestedID = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "comma") {
+		EST* nestedIDloop = est->makeNode("nestedid");
+		est_stack.push(nestedIDloop);
 		replace("NESTEDID", "comma id NESTEDID");
-		if (match("comma") & match("id") & nestedId()) {
-			return true;
+		if (match("comma")) {
+			EST* id_ast = est->makeNode("Class", lookahead[1]);
+			if (match("id") & nestedId()) {
+				id_ast->makeSiblings(nestedIDloop);
+				nestedID = id_ast;
+				est_stack.push(nestedID);
+				return true;
+			}
 		}
 		else
 			return false;
 	}
 	else if (lookahead[0] == "opencubr") {
+		est_stack.push(nestedID);
 		replace("NESTEDID ", "");
 		return true;
 	}
@@ -436,15 +525,47 @@ bool parser::classdeclbody()
 	firsts.clear();
 	follows.clear();
 
+	EST* inherit_ast = est_stack.top();
+	est_stack.pop();
+	EST* classd = est_stack.top();
+	est_stack.pop();
+
+
 	if (lookahead[0] == "public" || lookahead[0] == "private" || lookahead[0] == "func" || lookahead[0] == "integer" || lookahead[0] == "float" || lookahead[0] == "string" || lookahead[0] == "id") {
+		EST* visibility_est = est->makeNode("visibility");
+		EST* memberdecl_est = est->makeNode("memberdecl");
+		EST* classdecl_est = est->makeNode("classdeclbody");
+		
+		est_stack.push(classdecl_est);
+		est_stack.push(inherit_ast);
+		est_stack.push(memberdecl_est);
+		est_stack.push(visibility_est);
+
 		replace("CLASSDECLBODY", "VISIBILITY MEMBERDECL CLASSDECLBODY");
-		if (visibility() & memberDecl() & classdeclbody())
+		if (visibility() & memberDecl() & classdeclbody()) {
+			visibility_est = est_stack.top();
+			est_stack.pop();
+			memberdecl_est = est_stack.top();
+			est_stack.pop();
+			classdecl_est = est_stack.top();
+			est_stack.pop();
+			classd->makeFamily(visibility_est);
+			visibility_est->makeSiblings(memberdecl_est);
+			classd->makeSiblings(classdecl_est);
+			labelToFile(classd->getType(), to_string(idlabelcounter));  
+			classBodyCounts.push_back(idlabelcounter);
+			createLabelChildDiagram(idlabelcounter, visibility_est);
+			idlabelcounter++; // check 
+			est_stack.push(classd);
+			est_stack.push(inherit_ast);
 			return true;
+		}
 		else
 			return false;
 	}
 	else if (lookahead[0] == "closecubr") {
 		replace("CLASSDECLBODY ", "");
+		est_stack.push(inherit_ast);
 		return true;
 	}
 	else
@@ -453,6 +574,7 @@ bool parser::classdeclbody()
 
 bool parser::visibility()
 {
+	
 	firsts.push_back("public");
 	firsts.push_back("private");
 	firsts.push_back("epsilon");
@@ -462,6 +584,12 @@ bool parser::visibility()
 	follows.push_back("string");
 	follows.push_back("id");
 
+	EST* visibility_est = est_stack.top();
+	est_stack.pop();
+	labelToFile(visibility_est->getType(), to_string(labelcounter));
+	visibilityCount.push_back(labelcounter);
+	labelcounter++;
+
 	if (!skipErrors(firsts, follows))
 		return false;
 	firsts.clear();
@@ -469,19 +597,30 @@ bool parser::visibility()
 
 	if (lookahead[0] == "public") {
 		replace("VISIBILITY", "public");
-		if (match("public"))
+		if (match("public")) {
+			EST* visibility_id = est->makeNode("id", "public");
+			labelToFile(to_string(visibilityCount.back()), to_string(labelcounter));
+			visibility_est->adoptChildren(visibility_id);
+			est_stack.push(visibility_est);
 			return true;
+		}
 		else
 			return false;
 	}
 	else if (lookahead[0] == "private") {
 		replace("VISIBILITY", "private");
-		if (match("private"))
+		if (match("private")) {
+			EST* visibility_id = est->makeNode("id", "private");
+			labelToFile(to_string(visibilityCount.back()), to_string(labelcounter));
+			visibility_est->adoptChildren(visibility_id);
+			est_stack.push(visibility_est);
 			return true;
+		}
 		else
 			return false;
 	}
 	else if (lookahead[0] == "func" || lookahead[0] == "integer" || lookahead[0] == "float" || lookahead[0] == "string" || lookahead[0] == "id") {
+		est_stack.push(visibility_est);
 		replace("VISIBILITY ", "");
 		return true;
 	}
@@ -491,6 +630,15 @@ bool parser::visibility()
 
 bool parser::memberDecl()
 {
+	EST* visibility_est = est_stack.top();
+	est_stack.pop();
+	EST* memberdecl_ast = est_stack.top();
+	est_stack.pop();
+	EST* inherit_ast = est_stack.top();
+	est_stack.pop();
+	EST* classd = est_stack.top();
+	est_stack.pop();
+
 	firsts.push_back("func");
 	firsts.push_back("integer");
 	firsts.push_back("float");
@@ -510,17 +658,38 @@ bool parser::memberDecl()
 	firsts.clear();
 	follows.clear();
 
+	labelToFile(memberdecl_ast->getType(), to_string(labelcounter));
+	memberCount.push_back(labelcounter);
+	labelcounter++;
+
 	if (lookahead[0] == "func") {
+		EST* funcdec_ast = est->makeNode("funcdecl");
+		est_stack.push(funcdec_ast);
 		replace("MEMBERDECL", "FUNCDECL");
-		if (funcDecl())
+		if (funcDecl()) {
+			memberdecl_ast->makeFamily(funcdec_ast);
+			labelToFile(funcdec_ast->getType(), to_string(idlabelcounter));
+			createParentDiagram(memberCount.back(), idlabelcounter);
+			idlabelcounter++;
+			est_stack.push(visibility_est);
+			est_stack.push(memberdecl_ast);
+			est_stack.push(inherit_ast);
 			return true;
+		}
 		else
 			return false;
 	}
 	else if (lookahead[0] == "integer" || lookahead[0] == "float" || lookahead[0] == "string" || lookahead[0] == "id") {
+		EST* vardecl_ast = est->makeNode("vardecl");
+		est_stack.push(vardecl_ast);
 		replace("MEMBERDECL", "VARDECL");
-		if (varDecl())
+		if (varDecl()) {
+			memberdecl_ast->makeFamily(vardecl_ast);
+			labelToFile(vardecl_ast->getType(), to_string(idlabelcounter));
+			createParentDiagram(memberCount.back(), idlabelcounter);
+			idlabelcounter++;
 			return true;
+		}
 		else
 			return false;
 	}
@@ -530,6 +699,9 @@ bool parser::memberDecl()
 
 bool parser::funcDecl()
 {
+	EST* funcdecl_est = est_stack.top();
+	est_stack.pop();
+
 	firsts.push_back("func");
 	follows.push_back("public");
 	follows.push_back("private");
@@ -546,11 +718,33 @@ bool parser::funcDecl()
 	follows.clear();
 
 	if (lookahead[0] == "func") {
-		replace("FUNCDECL", "func id openpar FPARAMS closepar colon FUNCDECLTAIL semi");
-		if (match("func") & match("id") & match("openpar") & fParams() & match("closepar") & match("colon") & funcDeclTail() & match("semi"))
-			return true;
+		replace("FUNCDECL", "func id openpar FPARAMS closepar colon FUNCDECLTAIL semi"); 
+		EST* fparams_ast = est->makeNode("fparams");
+		EST* funcdecltail_ast = est->makeNode("funcdecltail");
+		
+		est_stack.push(funcdecltail_ast);
+		est_stack.push(fparams_ast);
+
+		if (match("func")) {
+			EST* funcid = est->makeNode("id", lookahead[1]);
+			if (match("id") & match("openpar") & fParams() & match("closepar") & match("colon") & funcDeclTail() & match("semi")) {
+				fparams_ast = est_stack.top();
+				est_stack.pop();
+				funcdecltail_ast = est_stack.top();
+				est_stack.pop();
+				funcdecl_est->makeFamily(funcid);
+				funcid->makeSiblings(fparams_ast);
+				fparams_ast->makeSiblings(funcdecltail_ast);
+				est_stack.push(funcdecl_est);
+
+				return true;
+			}
+			else
+				return false;
+		}
 		else
 			return false;
+		
 	}
 	else
 		return false;
@@ -661,6 +855,7 @@ bool parser::arraySizeRept()
 		return false;
 }
 
+
 bool parser::intNum()
 {
 	firsts.push_back("intnum");
@@ -689,6 +884,9 @@ bool parser::intNum()
 
 bool parser::fParams()
 {
+	EST* fparams_ast = est_stack.top();
+	est_stack.pop();
+
 	firsts.push_back("integer");
 	firsts.push_back("float");
 	firsts.push_back("string");
@@ -702,14 +900,36 @@ bool parser::fParams()
 	follows.clear();
 
 	if (lookahead[0] == "integer" || lookahead[0] == "float" || lookahead[0] == "string" || lookahead[0] == "id") {
+		EST* type_ast = est->makeNode("type");
+		EST* arraysizerept_ast = est->makeNode("arraysizerept"); // Create node types
+		EST* fparamstail_ast = est->makeNode("fparamstail");
+		est_stack.push(fparamstail_ast);
+		est_stack.push(arraysizerept_ast);
+		est_stack.push(type_ast);
 		replace("FPARAMS", "TYPE id ARRAYSIZEREPT FPARAMSTAIL");
-		if (type() & match("id") & arraySizeRept() & fParamsTail())
-			return true;
+		if (type()) {
+			EST* fparams_id = est->makeNode("id", lookahead[1]);
+			if (match("id") & arraySizeRept() & fParamsTail()) {
+				type_ast = est_stack.top();
+				est_stack.pop();
+				arraysizerept_ast = est_stack.top();
+				est_stack.pop();
+				fparamstail_ast = est_stack.top();
+				est_stack.pop();
+
+				fparams_ast->makeFamily(type_ast);
+				type_ast->makeSiblings(fparams_id);
+				type_ast->makeSiblings(fparamstail_ast); // Check if needed
+				est_stack.push(fparams_ast);
+				return true;
+			}
+		}			
 		else
 			return false;
 	}
 	else if (lookahead[0] == "closepar") {
 		replace("FPARAMS ", "");
+		est_stack.push(fparams_ast);
 		return true;
 	}
 	else

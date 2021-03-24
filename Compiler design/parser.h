@@ -40,7 +40,19 @@ private:
 	void initializeFile(string fileName);
 	ESTmaker* est;
 	EST* ast;
+	void createFamilyDiagram(EST* parent, int labelNum);
+	void createParentDiagram(int labelNum, int child_label);
+	void createLabelChildDiagram(int labelNum, EST* child);
+	void createTreeDiagram(EST* parent);
 	void diagramToFile(string parent, string child);
+	void labelToFile(string child, string child_label);
+	int labelcounter = 1;
+	int idlabelcounter = 100;
+	vector<int>inheritCounts;
+	vector<int>inheritClassCounts;
+	vector<int>classBodyCounts;
+	vector<int>visibilityCount;
+	vector<int>memberCount;
 
 	bool start();
 	bool prog();

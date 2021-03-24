@@ -1,0 +1,5 @@
+digraph EST{
+1[label="INHERIT"]; 
+2[label="VISIBILITY"]; 
+3[label="2"]; 
+3[label="MEMBERDECL"]; 

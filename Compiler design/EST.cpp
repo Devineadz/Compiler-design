@@ -8,17 +8,22 @@ void EST::makeSiblings(EST* y)
 {
 	if (this->right_sibling == NULL) {
 		this->right_sibling = y;
+		if (this->parent != NULL)
+			y->parent = this->parent;
 	}
 	else {
 		EST* placeholder = this;
-		while (placeholder->right_sibling != NULL) {
+		EST* right_siblingholder = this->right_sibling;
+		while (right_siblingholder->right_sibling != NULL) {
+			right_siblingholder = right_siblingholder->right_sibling;
 			placeholder = placeholder->right_sibling;
 		}
-		placeholder->right_sibling = y;
+		placeholder->right_sibling->right_sibling = y;
 	}
 	if (y->leftmost_sibling == NULL) {
 		y->leftmost_sibling = this;
 	}
+
 }
 
 void EST::adoptChildren(EST* y)
@@ -35,15 +40,14 @@ void EST::adoptChildren(EST* y)
 
 void EST::makeFamily(EST* y)
 {
-	if (this->left_child != NULL) {
-	}
-	else {
+	if (!this->left_child) {
 		if (y->leftmost_sibling != NULL) {
 			this->left_child = y->leftmost_sibling;
 		}
 		else
 			this->left_child = y;
 	}
+
 	y->parent = this;
 }
 
@@ -107,6 +111,12 @@ EST* ESTmaker::makeNode(string node_type)
 	if (node_type == "type") {
 		return new Type;
 	}
+	if (node_type == "intnum") {
+		return new Intnum;
+	}
+	if (node_type == "classlist") {
+		return new Classlist;
+	}
 	else
 		return NULL;
 }
@@ -120,7 +130,13 @@ EST* ESTmaker::makeNode(string node_type, string node_val)
 	if (node_type == "id") {
 		return new ID(node_val);
 	}
-	if (node_type == "Class") {
+	if (node_type == "class") {
 		return new Class(node_val);
+	}
+	if (node_type == "intnum") {
+		return new Intnumber(node_val);
+	}
+	if (node_type == "type_id") {
+		return new Type_ID(node_val);
 	}
 }

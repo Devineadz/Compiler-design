@@ -218,14 +218,26 @@ public:
 
 };
 
-class Fparams : public EST {
+class Type : public EST {
 public:
-	Fparams() {
+	Type() {
 		parent = NULL;
 		right_sibling = NULL;
 		leftmost_sibling = NULL;
 		left_child = NULL;
-		type = "FPARAMS";
+		type = "TYPE";
+	}
+
+};
+
+class Intnum : public EST {
+public:
+	Intnum() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "INTNUM";
 	}
 
 };
@@ -238,6 +250,18 @@ public:
 		leftmost_sibling = NULL;
 		left_child = NULL;
 		type = "FUNCDECLTAIL";
+	}
+
+};
+
+class Classlist : public EST {
+public:
+	Classlist() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "CLASSLIST";
 	}
 
 };
@@ -267,6 +291,19 @@ public:
 	string id;
 };
 
+class Intnumber :public EST {
+public:
+	Intnumber(string id_name) {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = id_name;
+		id = "Intnum";
+	}
+	string id;
+};
+
 class Class :public EST {
 public:
 	Class(string id_name) {
@@ -279,6 +316,20 @@ public:
 	}
 	string id;
 };
+
+class Type_ID :public EST {
+public:
+	Type_ID(string id_name) {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = id_name;
+		id = "TYPE_ID";
+	}
+	string id;
+};
+
 
 class Empty_nody : public EST {
 

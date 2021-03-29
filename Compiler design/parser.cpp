@@ -268,9 +268,10 @@ bool parser::prog()
 
 
 		if (classdecl() & funcDef() & match("main") & funcbody()){
-
-			prog_ast = est_stack.top();
+			// pop three parts and make fam
+			class_decl_est = est_stack.top();
 			est_stack.pop();
+			prog_ast->makeFamily(class_decl_est);
 			est_stack.push(prog_ast);
 			return true;
 	}
@@ -285,8 +286,7 @@ bool parser::classdecl()
 {
 	EST* classd_ast = est_stack.top();
 	est_stack.pop();
-	EST* func_def_est = est_stack.top();
-	est_stack.pop();
+
 	
 	firsts.push_back("class");
 	firsts.push_back("epsilon");
@@ -309,15 +309,22 @@ bool parser::classdecl()
 		if (match("class")) {
 			string token_id = lookahead[1];
 			if (match("id") & inherit() & match("opencubr") & classdeclbody() & match("closecubr") & match("semi") & classdecl()) {
-				
 				// Make family of nodes under classdecl and push on stack
-				EST* id_ast = est->makeNode("Class", token_id);
+				inherit_ast = est_stack.top();
+				est_stack.pop();
+				classdeclbody_ast = est_stack.top();
+				est_stack.pop();
+				classdecl_ast = est_stack.top();
+				est_stack.pop();
+
+				EST* id_ast = est->makeNode("class", token_id);
 				id_ast->makeFamily(inherit_ast);
 				inherit_ast->makeSiblings(classdeclbody_ast);
 				est_stack.push(id_ast);
 				int inheritVal = inheritCounts.back();
-				inheritCounts.pop_back();
+
 				createFamilyDiagram(id_ast, inheritVal);
+				classd_ast = id_ast;
 				return true;
 			}
 			else
@@ -327,8 +334,10 @@ bool parser::classdecl()
 			return false;
 	}
 	else if (lookahead[0] == "func" || lookahead[0] == "main") {
-		func_def_est = classd_ast;
-		est_stack.push(func_def_est);
+		EST* classlist_ast = est->makeNode("classlist");
+		classlist_ast->makeFamily(classd_ast);
+		createTreeDiagram(classlist_ast);
+		est_stack.push(classlist_ast);
 		replace("CLASSDECL ", "");
 		return true;
 	}
@@ -439,13 +448,13 @@ bool parser::inherit()
 	labelToFile(inherit_ast->getType(), to_string(labelcounter));
 	labelcounter++;
 	
-
+	// Check once rest of the left fork is completed
 	if (lookahead[0] == "inherits") {
 		EST* nestedID = est->makeNode("nestedid");
 		est_stack.push(nestedID);
 		replace("INHERIT", "inherits id NESTEDID");
 		if (match("inherits")) {
-			EST* id_ast = est->makeNode("Class", lookahead[1]);
+			EST* id_ast = est->makeNode("class", lookahead[1]);
 			if (match("id") & nestedId()) {
 				inherit_ast->makeFamily(id_ast);
 				labelToFile(id_ast->getType(), to_string(idlabelcounter));
@@ -488,10 +497,9 @@ bool parser::nestedId()
 		est_stack.push(nestedIDloop);
 		replace("NESTEDID", "comma id NESTEDID");
 		if (match("comma")) {
-			EST* id_ast = est->makeNode("Class", lookahead[1]);
+			EST* id_ast = est->makeNode("class", lookahead[1]);
 			if (match("id") & nestedId()) {
-				id_ast->makeSiblings(nestedIDloop);
-				nestedID = id_ast;
+				nestedID->makeSiblings(id_ast);
 				est_stack.push(nestedID);
 				return true;
 			}
@@ -536,10 +544,11 @@ bool parser::classdeclbody()
 		EST* memberdecl_est = est->makeNode("memberdecl");
 		EST* classdecl_est = est->makeNode("classdeclbody");
 		
-		est_stack.push(classdecl_est);
 		est_stack.push(inherit_ast);
 		est_stack.push(memberdecl_est);
 		est_stack.push(visibility_est);
+		est_stack.push(classdecl_est);
+		est_stack.push(inherit_ast);
 
 		replace("CLASSDECLBODY", "VISIBILITY MEMBERDECL CLASSDECLBODY");
 		if (visibility() & memberDecl() & classdeclbody()) {
@@ -565,6 +574,7 @@ bool parser::classdeclbody()
 	}
 	else if (lookahead[0] == "closecubr") {
 		replace("CLASSDECLBODY ", "");
+		est_stack.push(classd);
 		est_stack.push(inherit_ast);
 		return true;
 	}
@@ -584,6 +594,11 @@ bool parser::visibility()
 	follows.push_back("string");
 	follows.push_back("id");
 
+
+	EST* inherit_ast = est_stack.top();
+	est_stack.pop();
+	EST* classdecl_ast = est_stack.top();
+	est_stack.pop();
 	EST* visibility_est = est_stack.top();
 	est_stack.pop();
 	labelToFile(visibility_est->getType(), to_string(labelcounter));
@@ -600,8 +615,11 @@ bool parser::visibility()
 		if (match("public")) {
 			EST* visibility_id = est->makeNode("id", "public");
 			labelToFile(to_string(visibilityCount.back()), to_string(labelcounter));
-			visibility_est->adoptChildren(visibility_id);
+			// add tree graph
+			visibility_est->makeFamily(visibility_id);
 			est_stack.push(visibility_est);
+			est_stack.push(classdecl_ast);
+			est_stack.push(inherit_ast);
 			return true;
 		}
 		else
@@ -612,8 +630,11 @@ bool parser::visibility()
 		if (match("private")) {
 			EST* visibility_id = est->makeNode("id", "private");
 			labelToFile(to_string(visibilityCount.back()), to_string(labelcounter));
-			visibility_est->adoptChildren(visibility_id);
+			visibility_est->makeFamily(visibility_id);
+			// add tree make
 			est_stack.push(visibility_est);
+			est_stack.push(classdecl_ast);
+			est_stack.push(inherit_ast);
 			return true;
 		}
 		else
@@ -621,6 +642,8 @@ bool parser::visibility()
 	}
 	else if (lookahead[0] == "func" || lookahead[0] == "integer" || lookahead[0] == "float" || lookahead[0] == "string" || lookahead[0] == "id") {
 		est_stack.push(visibility_est);
+		est_stack.push(classdecl_ast);
+		est_stack.push(inherit_ast);
 		replace("VISIBILITY ", "");
 		return true;
 	}
@@ -630,14 +653,17 @@ bool parser::visibility()
 
 bool parser::memberDecl()
 {
+	EST* inherit_ast = est_stack.top();
+	est_stack.pop();
+
+	EST* classd = est_stack.top();
+	est_stack.pop();
+
 	EST* visibility_est = est_stack.top();
 	est_stack.pop();
 	EST* memberdecl_ast = est_stack.top();
 	est_stack.pop();
-	EST* inherit_ast = est_stack.top();
-	est_stack.pop();
-	EST* classd = est_stack.top();
-	est_stack.pop();
+
 
 	firsts.push_back("func");
 	firsts.push_back("integer");
@@ -671,6 +697,7 @@ bool parser::memberDecl()
 			labelToFile(funcdec_ast->getType(), to_string(idlabelcounter));
 			createParentDiagram(memberCount.back(), idlabelcounter);
 			idlabelcounter++;
+			est_stack.push(memberdecl_ast);
 			est_stack.push(visibility_est);
 			est_stack.push(memberdecl_ast);
 			est_stack.push(inherit_ast);
@@ -688,6 +715,10 @@ bool parser::memberDecl()
 			labelToFile(vardecl_ast->getType(), to_string(idlabelcounter));
 			createParentDiagram(memberCount.back(), idlabelcounter);
 			idlabelcounter++;
+			est_stack.push(memberdecl_ast);
+			est_stack.push(visibility_est);
+			est_stack.push(memberdecl_ast);
+			est_stack.push(inherit_ast);
 			return true;
 		}
 		else
@@ -796,31 +827,46 @@ bool parser::type()
 	firsts.clear();
 	follows.clear();
 
+	EST* type_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "integer") {
 		replace("TYPE", "integer");
-		if (match("integer"))
+		if (match("integer")) {
+			EST* type_idast = est->makeNode("type_id", "integer");
+			est_stack.push(type_idast);
 			return true;
+		}
 		else
 			return false;
 	}
 	if (lookahead[0] == "float") {
 		replace("TYPE", "float");
-		if (match("float"))
+		if (match("float")) {
+			EST* type_idast = est->makeNode("type_id", "float");
+			est_stack.push(type_idast);
 			return true;
+		}
 		else
 			return false;
 	}
 	if (lookahead[0] == "string") {
 		replace("TYPE", "string");
-		if (match("string"))
+		if (match("string")) {
+			EST* type_idast = est->makeNode("type_id", "string");
+			est_stack.push(type_idast);
 			return true;
+		}
 		else
 			return false;
 	}
 	if (lookahead[0] == "id") {
+		EST* type_idast = est->makeNode("id", lookahead[1]);
 		replace("TYPE", "id");
-		if (match("id"))
+		if (match("id")) {	
+			est_stack.push(type_idast);
 			return true;
+		}
 		else
 			return false;
 	}
@@ -830,6 +876,8 @@ bool parser::type()
 
 bool parser::arraySizeRept()
 {
+	EST* arraysizerept_ast = est_stack.top();
+	est_stack.pop();
 	firsts.push_back("opensqbr");
 	firsts.push_back("epsilon");
 	follows.push_back("closepar");
@@ -842,12 +890,31 @@ bool parser::arraySizeRept()
 	follows.clear();
 	if (lookahead[0] == "opensqbr") {
 		replace("ARRAYSIZEREPT", "opensqbr INTNUM closesqbr ARRAYSIZEREPT");
-		if (match("opensqbr") & intNum() & match("closesqbr") & arraySizeRept())
+		EST* intnum_ast = est->makeNode("intnum");
+		EST* arraysizerept_loop = est->makeNode("arraysizerept");
+		est_stack.push(arraysizerept_loop);
+		est_stack.push(intnum_ast);
+		
+		if (match("opensqbr") & intNum() & match("closesqbr") & arraySizeRept()) {
+			// check this later when infinite loop is fixed
+			intnum_ast = est_stack.top();
+			est_stack.pop();
+			arraysizerept_loop = est_stack.top();
+			est_stack.pop();
+			arraysizerept_ast->makeSiblings(arraysizerept_loop);
+			arraysizerept_loop->makeFamily(intnum_ast);
+			est_stack.push(arraysizerept_ast);
 			return true;
+		}
 		else
 			return false;
 	}
 	else if (lookahead[0] == "semi" || lookahead[0] == "comma" || lookahead[0] == "closepar") {
+		EST* type_ast = arraysizerept_ast;
+		arraysizerept_ast = est_stack.top();
+		est_stack.pop();
+		type_ast->makeFamily(arraysizerept_ast);
+		est_stack.push(type_ast);
 		replace("ARRAYSIZEREPT ", "");
 		return true;
 	}
@@ -866,15 +933,23 @@ bool parser::intNum()
 		return false;
 	firsts.clear();
 	follows.clear();
+
+	EST* intnum_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "intnum") {
+		EST* intnumast = est->makeNode("intnum", lookahead[1]);
 		replace("INTNUM ", "intnum");
 		if (match("intnum")) {
+			intnum_ast->makeFamily(intnumast);
+			est_stack.push(intnum_ast);
 			return true;
 		}
 		else
 			return false;
 	}
 	else if (lookahead[0] == "closesqbr") {
+		est_stack.push(intnum_ast);
 		replace("INTNUM ", "");
 		return true;
 	}
@@ -912,14 +987,13 @@ bool parser::fParams()
 			if (match("id") & arraySizeRept() & fParamsTail()) {
 				type_ast = est_stack.top();
 				est_stack.pop();
-				arraysizerept_ast = est_stack.top();
-				est_stack.pop();
+				//arraysizerept already sibling
 				fparamstail_ast = est_stack.top();
 				est_stack.pop();
 
-				fparams_ast->makeFamily(type_ast);
-				type_ast->makeSiblings(fparams_id);
-				type_ast->makeSiblings(fparamstail_ast); // Check if needed
+				fparams_ast->makeFamily(fparams_id); // nullptr
+				fparams_id->makeSiblings(type_ast);
+				fparams_ast->makeSiblings(fparamstail_ast); // Check if needed
 				est_stack.push(fparams_ast);
 				return true;
 			}
@@ -971,6 +1045,8 @@ bool parser::funcDeclTail()
 
 bool parser::fParamsTail()
 {
+	EST* fparamstail_ast = est_stack.top();
+	est_stack.pop();
 	firsts.push_back("comma");
 	firsts.push_back("epsilon");
 	follows.push_back("closepar");
@@ -981,14 +1057,29 @@ bool parser::fParamsTail()
 	follows.clear();
 
 	if (lookahead[0] == "comma") {
+		EST* type_ast = est->makeNode("type");
+		EST* arraysizerept_ast = est->makeNode("arraysizerept");
+		EST* fparamstailast = est->makeNode("fparamstail");
 		replace("FPARAMSTAIL", "comma TYPE id ARRAYSIZEREPT FPARAMSTAIL");
-		if (match("comma") & type() & match("id") & arraySizeRept() & fParamsTail()) {
-			return true;
+		if (match("comma") & type()){
+			EST* fparams_id = est->makeNode("id", lookahead[1]);
+			if (match("id") & arraySizeRept() & fParamsTail()) {
+				type_ast = est_stack.top();
+				est_stack.pop();
+				fparamstailast->makeFamily(fparams_id);
+				type_ast->makeSiblings(fparamstailast);
+				est_stack.push(fparamstail_ast);
+				return true;
+			}
+			else
+				return false;
 		}
 		else
 			return false;
 	}
 	else if (lookahead[0] == "closepar") {
+		EST* original_type = fparamstail_ast;
+		est_stack.push(original_type);
 		replace("FPARAMSTAIL ", "");
 		return true;
 	}

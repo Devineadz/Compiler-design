@@ -3,3 +3,24 @@ digraph EST{
 2[label="VISIBILITY"]; 
 3[label="2"]; 
 3[label="MEMBERDECL"]; 
+100[label="Funcdecl"]; 
+3 -> 100
+101[label="CLASSDECLBODY"]; 
+101 -> INHERIT
+101 -> MEMBERDECL
+4[label="INHERIT"]; 
+102[label="POLYNOMIAL"]; 
+4 -> 102
+5[label="VISIBILITY"]; 
+6[label="5"]; 
+6[label="MEMBERDECL"]; 
+103[label="VARDECL"]; 
+6 -> 103
+7[label="VISIBILITY"]; 
+8[label="7"]; 
+8[label="MEMBERDECL"]; 
+104[label="VARDECL"]; 
+8 -> 104
+9[label="VISIBILITY"]; 
+10[label="9"]; 
+10[label="MEMBERDECL"]; 

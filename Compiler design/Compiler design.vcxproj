@@ -139,22 +139,30 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CodeGenerationVisitor.cpp" />
     <ClCompile Include="EST.cpp" />
     <ClCompile Include="lexer.cpp" />
     <ClCompile Include="parser.cpp" />
     <ClCompile Include="parserdriver.cpp" />
+    <ClCompile Include="Prog_node.cpp" />
+    <ClCompile Include="Visitor.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="test.src" />
+    <None Include="First_test.src" />
     <None Include="test2.src" />
     <None Include="test3.src" />
     <None Include="test_error2.src" />
     <None Include="Test_error.src" />
+    <None Include="Test_first.src" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CodeGenerationVisitor.h" />
     <ClInclude Include="EST.h" />
     <ClInclude Include="lexer.h" />
     <ClInclude Include="parser.h" />
+    <ClInclude Include="Prog_node.h" />
+    <ClInclude Include="SymTabCreationVisitor.h" />
+    <ClInclude Include="Visitor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

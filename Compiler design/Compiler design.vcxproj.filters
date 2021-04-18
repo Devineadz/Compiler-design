@@ -27,15 +27,23 @@
     <ClCompile Include="EST.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CodeGenerationVisitor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Visitor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Prog_node.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="test.src">
-      <Filter>Source Files</Filter>
-    </None>
     <None Include="test2.src" />
     <None Include="Test_error.src" />
     <None Include="test_error2.src" />
     <None Include="test3.src" />
+    <None Include="First_test.src" />
+    <None Include="Test_first.src" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lexer.h">
@@ -45,6 +53,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="EST.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Visitor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SymTabCreationVisitor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CodeGenerationVisitor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Prog_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

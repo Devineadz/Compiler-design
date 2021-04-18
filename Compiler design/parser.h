@@ -9,6 +9,7 @@
 #include <typeinfo>
 #include "lexer.h"
 #include "EST.h"
+#include "Prog_node.h"
 
 using namespace std;
 
@@ -16,7 +17,7 @@ class parser {
 public:
 	parser(string path);
 	~parser();
-	bool parse();
+	EST* parse();
 	string token_path;
 	stack<EST*> est_stack;
 private:

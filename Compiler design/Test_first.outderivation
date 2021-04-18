@@ -1,0 +1,58 @@
+START
+PROG
+CLASSDECL FUNCDEF main FUNCBODY
+FUNCDEF main FUNCBODY
+main FUNCBODY
+main opencubr METHODBODYVAR STATEMENTLIST closecubr
+main opencubr var opencubr VARDECLREP closecubr STATEMENTLIST closecubr
+main opencubr var opencubr VARDECL VARDECLREP closecubr STATEMENTLIST closecubr
+main opencubr var opencubr TYPE id ARRAYSIZEREPT semi VARDECLREP closecubr STATEMENTLIST closecubr
+main opencubr var opencubr integer id ARRAYSIZEREPT semi VARDECLREP closecubr STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi VARDECLREP closecubr STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi VARDECL VARDECLREP closecubr STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi TYPE id ARRAYSIZEREPT semi VARDECLREP closecubr STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id ARRAYSIZEREPT semi VARDECLREP closecubr STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi VARDECLREP closecubr STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr STATEMENT STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr FUNCORASSIGNSTAT semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id FUNCORASSIGNSTATIDNEST semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id INDICEREP FUNCORASSIGNSTATIDNESTVARTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id FUNCORASSIGNSTATIDNESTVARTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id ASSIGNSTATTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id ASSIGNOP EXPR semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign EXPR semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign ARITHEXPR EXPRTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign TERM ARITHEXPRTAIL EXPRTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign FACTOR TERMTAIL ARITHEXPRTAIL EXPRTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum TERMTAIL ARITHEXPRTAIL EXPRTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum ARITHEXPRTAIL EXPRTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum EXPRTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi STATEMENT STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi FUNCORASSIGNSTAT semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id FUNCORASSIGNSTATIDNEST semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id INDICEREP FUNCORASSIGNSTATIDNESTVARTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id FUNCORASSIGNSTATIDNESTVARTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id ASSIGNSTATTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id ASSIGNOP EXPR semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign EXPR semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign ARITHEXPR EXPRTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign TERM ARITHEXPRTAIL EXPRTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign FACTOR TERMTAIL ARITHEXPRTAIL EXPRTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum TERMTAIL ARITHEXPRTAIL EXPRTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum ARITHEXPRTAIL EXPRTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum EXPRTAIL semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum semi STATEMENT STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum semi write openpar EXPR closepar semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum semi write openpar ARITHEXPR EXPRTAIL closepar semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum semi write openpar TERM ARITHEXPRTAIL EXPRTAIL closepar semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum semi write openpar FACTOR TERMTAIL ARITHEXPRTAIL EXPRTAIL closepar semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum semi write openpar FUNCORVAR TERMTAIL ARITHEXPRTAIL EXPRTAIL closepar semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum semi write openpar id FUNCORVARIDNEST TERMTAIL ARITHEXPRTAIL EXPRTAIL closepar semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum semi write openpar id TERMTAIL ARITHEXPRTAIL EXPRTAIL closepar semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum semi write openpar id ARITHEXPRTAIL EXPRTAIL closepar semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum semi write openpar id EXPRTAIL closepar semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum semi write openpar id closepar semi STATEMENTLIST closecubr
+main opencubr var opencubr integer id semi integer id semi closecubr id assign intnum semi id assign intnum semi write openpar id closepar semi closecubr

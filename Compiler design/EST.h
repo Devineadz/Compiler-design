@@ -6,6 +6,9 @@
 #include <vector>
 #include <algorithm>
 
+class Visitor;
+class Prog_node;
+
 
 using namespace std;
 
@@ -13,16 +16,18 @@ using namespace std;
 class EST {
 	
 public: 
-	EST* parent;
-	EST* right_sibling;
-	EST* leftmost_sibling;
-	EST* left_child;
-	string type;
+	EST *parent = NULL;
+	EST* right_sibling = NULL;
+	EST* leftmost_sibling = NULL;
+	EST* left_child = NULL;
+	string type = "Node";
 
 	string getType() const { return type; }
 	void makeSiblings(EST* y);
 	void adoptChildren(EST* y);
 	void makeFamily(EST* y);
+	vector<EST*> getChildren();
+	virtual void accept(Visitor* visit);
 };
 
 class Prog : public EST {
@@ -33,6 +38,8 @@ public:
 		leftmost_sibling = NULL;
 		left_child = NULL;
 		type = "PROG";
+	}
+	void accept(Visitor &visitor) {
 	}
 };
 
@@ -45,7 +52,9 @@ public:
 		left_child = NULL;
 		type = "CLASS_DECL";
 	}
-
+//	void accept(Visitor* visitor) {
+//		visitor->visit(this);
+//	}
 };
 
 class Func_def : public EST {
@@ -57,7 +66,9 @@ public:
 		left_child = NULL;
 		type = "FUNC DEF";
 	}
-
+//	void accept(Visitor* visitor) {
+//		visitor->visit(this);
+//	}
 
 };
 
@@ -70,7 +81,9 @@ public:
 		left_child = NULL;
 		type = "FUNC BODY";
 	}
-
+//	void accept(Visitor* visitor) {
+//		visitor->visit(this);
+//	}
 
 };
 
@@ -83,7 +96,9 @@ public:
 		left_child = NULL;
 		type = "METHOD BODY";
 	}
-
+//	void accept(Visitor* visitor) {
+//		visitor->visit(this);
+//	}
 };
 
 class StatementList : public EST {
@@ -94,6 +109,223 @@ public:
 		leftmost_sibling = NULL;
 		left_child = NULL;
 		type = "STATEMENTLIST";
+	}
+//	void accept(Visitor* visitor) {
+//		visitor->visit(this);
+//	}
+};
+
+class Statement : public EST {
+public:
+	Statement() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "STATEMENT";
+	}
+//	void accept(Visitor* visitor) {
+//		visitor->visit(this);
+//	}
+};
+
+class Funcorassignstat : public EST {
+public:
+	Funcorassignstat() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "FUNCORASSIGNSTAT";
+	}
+
+}; 
+
+class FuncOrAssignStatIdnest : public EST {
+public:
+	FuncOrAssignStatIdnest() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "FUNCORASSIGNSTATIDNEST";
+	}
+
+};
+
+class Indicerep : public EST {
+public:
+	Indicerep() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "INDICEREP";
+	}
+
+};
+
+class Assignstattail : public EST {
+public:
+	Assignstattail() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "ASSIGNSTATTAIL";
+	}
+
+};
+
+class Assignop : public EST {
+public:
+	Assignop() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "ASSIGNOP";
+	}
+//	void accept(Visitor* visitor) {
+	//	visitor->visit(this);
+//	}
+};
+
+class Expr : public EST {
+public:
+	Expr() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "EXPR";
+	}
+//	void accept(Visitor* visitor) {
+//		visitor->visit(this);
+//	}
+};
+
+class Exprtail : public EST {
+public:
+	Exprtail() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "EXPRTAIL";
+	}
+
+};
+
+class Term : public EST {
+public:
+	Term() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "TERM";
+	}
+
+};
+
+class Arithexprtail : public EST {
+public:
+	Arithexprtail() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "ARITHEXPRTAIL";
+	}
+
+};
+
+class Termtail : public EST {
+public:
+	Termtail() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "TERMTAIL";
+	}
+
+};
+
+class Factor : public EST {
+public:
+	Factor() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "FACTOR";
+	}
+
+};
+
+class Write : public EST {
+public:
+	Write() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "WRITE";
+	}
+//	void accept(Visitor* visitor) {
+//		visitor->visit(this);
+//	}
+};
+
+class Funcorvar : public EST {
+public:
+	Funcorvar() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "FUNCORVAR";
+	}
+
+};
+
+class Funcorvaridnest : public EST {
+public:
+	Funcorvaridnest() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "FUNCORVARIDNEST";
+	}
+
+};
+
+class Arithexpr : public EST {
+public:
+	Arithexpr() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "ARITHEXPR";
+	}
+//	void accept(Visitor* visitor) {
+//		visitor->visit(this);
+//	}
+
+};
+
+class FuncOrAssignStatIdnestVarTail : public EST {
+public:
+	FuncOrAssignStatIdnestVarTail() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "FUNCORASSIGNSTATIDNESTVARTAIL";
 	}
 
 };
@@ -179,6 +411,9 @@ public:
 		left_child = NULL;
 		type = "VARDECL";
 	}
+//	void accept(Visitor* visitor) {
+//		visitor->visit(this);
+//	}
 
 };
 
@@ -218,6 +453,18 @@ public:
 
 };
 
+class Void : public EST {
+public:
+	Void() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "VOID";
+	}
+
+};
+
 class Type : public EST {
 public:
 	Type() {
@@ -226,6 +473,30 @@ public:
 		leftmost_sibling = NULL;
 		left_child = NULL;
 		type = "TYPE";
+	}
+
+};
+
+class Vardeclrep : public EST {
+public:
+	Vardeclrep() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "VARDECLREP";
+	}
+
+};
+
+class Varlist : public EST {
+public:
+	Varlist() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "VARLIST";
 	}
 
 };
@@ -239,7 +510,6 @@ public:
 		left_child = NULL;
 		type = "INTNUM";
 	}
-
 };
 
 class Funcdecltail : public EST {
@@ -289,6 +559,12 @@ public:
 		id = "ID";
 	}
 	string id;
+
+	string getID() const {  return id; }
+
+//	void accept(Visitor* visitor) {
+//		visitor->visit(this);
+//	}
 };
 
 class Intnumber :public EST {
@@ -302,6 +578,9 @@ public:
 		id = "Intnum";
 	}
 	string id;
+//	void accept(Visitor* visitor) {
+//		visitor->visit(this);
+//	}
 };
 
 class Class :public EST {

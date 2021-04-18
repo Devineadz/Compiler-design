@@ -12,7 +12,7 @@ parser::parser(string path)
 	tokenizer = new lexer(token_path);
 	initializeFile(path);
 	eof = false;
-	ast = new Prog();
+	ast = new Prog_node();
 }
 
 parser::~parser()
@@ -113,15 +113,16 @@ void parser::initializeFile(string fileName)
 }
 
 // Parsing starter
-bool parser::parse()
+EST* parser::parse()
 {
+	ESTmaker* est = new ESTmaker();
 	nextToken();
 	if (start() & match("$")) {
 		cout << "Parsing ready";
-		return true;
+		EST* prog = est_stack.top();
+		est_stack.pop();
+		return prog;
 	}
-	else
-		return false;
 }
 
 // Recursive descent beginning
@@ -134,7 +135,6 @@ bool parser::start()
 	firsts.push_back("class");
 	firsts.push_back("func");
 	follows.push_back("$");	
-	ESTmaker* est = new ESTmaker();
 	est_stack.push(ast);
 	if (!skipErrors(firsts, follows))
 		return false;
@@ -148,6 +148,7 @@ bool parser::start()
 				diagramFile << "}";
 			}
 			diagramFile.close();
+			EST* start = est_stack.top();
 			return(true);
 		}
 	}
@@ -268,7 +269,6 @@ bool parser::prog()
 
 
 		if (classdecl() & funcDef() & match("main") & funcbody()){
-			// pop three parts and make fam
 			class_decl_est = est_stack.top();
 			est_stack.pop();
 			prog_ast->makeFamily(class_decl_est);
@@ -347,9 +347,9 @@ bool parser::classdecl()
 
 bool parser::funcDef()
 {
-	EST* funcdef_ast = est_stack.top();
+	EST* c_holder = est_stack.top();
 	est_stack.pop();
-	EST* func_body_est = est_stack.top();
+	EST* funcdef_ast = est_stack.top();
 	est_stack.pop();
 
 	firsts.push_back("func");
@@ -359,7 +359,6 @@ bool parser::funcDef()
 		return false;
 	firsts.clear();
 	follows.clear();
-
 
 
 	if (lookahead[0] == "func") {
@@ -378,8 +377,11 @@ bool parser::funcDef()
 			return false;
 	}
 	else if (lookahead[0] == "main") {
-		func_body_est = funcdef_ast;
-		est_stack.push(func_body_est);
+		EST* func_body = est_stack.top();
+		est_stack.pop();
+		c_holder->makeSiblings(funcdef_ast);
+		c_holder->makeSiblings(func_body);
+		est_stack.push(func_body);
 		replace("FUNCDEF ", "");
 		return true;
 	}
@@ -420,7 +422,9 @@ bool parser::funcbody()
 		est_stack.push(statementList_est);
 		est_stack.push(methodBodyVar_est);
 		if (match("opencubr") & methodBodyVar() & statementList() & match("closecubr")) {
-			funcbody_ast = statementList_est;
+			statementList_est = est_stack.top();
+			est_stack.pop();
+			funcbody_ast->makeFamily(statementList_est);
 			est_stack.push(funcbody_ast);
 			return true;
 		}
@@ -711,6 +715,8 @@ bool parser::memberDecl()
 		est_stack.push(vardecl_ast);
 		replace("MEMBERDECL", "VARDECL");
 		if (varDecl()) {
+			vardecl_ast = est_stack.top();
+			est_stack.pop();
 			memberdecl_ast->makeFamily(vardecl_ast);
 			labelToFile(vardecl_ast->getType(), to_string(idlabelcounter));
 			createParentDiagram(memberCount.back(), idlabelcounter);
@@ -759,9 +765,9 @@ bool parser::funcDecl()
 		if (match("func")) {
 			EST* funcid = est->makeNode("id", lookahead[1]);
 			if (match("id") & match("openpar") & fParams() & match("closepar") & match("colon") & funcDeclTail() & match("semi")) {
-				fparams_ast = est_stack.top();
-				est_stack.pop();
 				funcdecltail_ast = est_stack.top();
+				est_stack.pop();
+				fparams_ast = est_stack.top();
 				est_stack.pop();
 				funcdecl_est->makeFamily(funcid);
 				funcid->makeSiblings(fparams_ast);
@@ -801,10 +807,28 @@ bool parser::varDecl()
 	firsts.clear();
 	follows.clear();
 
+	EST* vardecl_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "integer" || lookahead[0] == "float" || lookahead[0] == "string" || lookahead[0] == "id") {
 		replace("VARDECL", "TYPE id ARRAYSIZEREPT semi");
-		if (type() & match("id") & arraySizeRept() & match("semi"))
-			return true;
+		EST* type_ast = est->makeNode("type");
+		EST* arraysizerept_ast = est->makeNode("arraysizerept");
+		est_stack.push(arraysizerept_ast);
+		est_stack.push(type_ast);
+		if (type()) {
+			EST* vardecl_id = est->makeNode("id", lookahead[1]);
+			vardecl_ast->makeFamily(vardecl_id);
+			if (match("id") & arraySizeRept() & match("semi")) {
+				type_ast = est_stack.top();
+				est_stack.pop();
+				vardecl_id->makeSiblings(type_ast);
+				est_stack.push(vardecl_ast);
+				return true;
+			}
+			else
+				return false;
+		}
 		else
 			return false;
 	}
@@ -834,7 +858,8 @@ bool parser::type()
 		replace("TYPE", "integer");
 		if (match("integer")) {
 			EST* type_idast = est->makeNode("type_id", "integer");
-			est_stack.push(type_idast);
+			type_ast->makeFamily(type_idast);
+			est_stack.push(type_ast);
 			return true;
 		}
 		else
@@ -844,7 +869,8 @@ bool parser::type()
 		replace("TYPE", "float");
 		if (match("float")) {
 			EST* type_idast = est->makeNode("type_id", "float");
-			est_stack.push(type_idast);
+			type_ast->makeFamily(type_idast);
+			est_stack.push(type_ast);
 			return true;
 		}
 		else
@@ -854,7 +880,8 @@ bool parser::type()
 		replace("TYPE", "string");
 		if (match("string")) {
 			EST* type_idast = est->makeNode("type_id", "string");
-			est_stack.push(type_idast);
+			type_ast->makeFamily(type_idast);
+			est_stack.push(type_ast);
 			return true;
 		}
 		else
@@ -864,7 +891,8 @@ bool parser::type()
 		EST* type_idast = est->makeNode("id", lookahead[1]);
 		replace("TYPE", "id");
 		if (match("id")) {	
-			est_stack.push(type_idast);
+			type_ast->makeFamily(type_idast);
+			est_stack.push(type_ast);
 			return true;
 		}
 		else
@@ -913,7 +941,7 @@ bool parser::arraySizeRept()
 		EST* type_ast = arraysizerept_ast;
 		arraysizerept_ast = est_stack.top();
 		est_stack.pop();
-		type_ast->makeFamily(arraysizerept_ast);
+		type_ast->makeSiblings(arraysizerept_ast);
 		est_stack.push(type_ast);
 		replace("ARRAYSIZEREPT ", "");
 		return true;
@@ -1025,17 +1053,31 @@ bool parser::funcDeclTail()
 	firsts.clear();
 	follows.clear();
 
+	EST* fparams = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "void") {
 		replace("FUNCDECLTAIL", "void");
-		if (match("void"))
+		if (match("void")) {
+			EST* void_ast = est->makeNode("void");
+			est_stack.push(fparams);
+			est_stack.push(void_ast);
 			return true;
+		}
 		else
 			return false;
 	}
 	else if (lookahead[0] == "float" || (lookahead[0] == "string") || (lookahead[0] == "integer") || (lookahead[0] == "id")) {
 		replace("FUNCDECLTAIL", "TYPE");
-		if (type())
+		EST* type_ast = est->makeNode("type");
+		est_stack.push(type_ast);
+		if (type()) {
+			type_ast = est_stack.top();
+			est_stack.pop();
+			est_stack.push(fparams);
+			est_stack.push(type_ast);
 			return true;
+		}
 		else
 			return false;
 	}
@@ -1045,8 +1087,6 @@ bool parser::funcDeclTail()
 
 bool parser::fParamsTail()
 {
-	EST* fparamstail_ast = est_stack.top();
-	est_stack.pop();
 	firsts.push_back("comma");
 	firsts.push_back("epsilon");
 	follows.push_back("closepar");
@@ -1055,6 +1095,9 @@ bool parser::fParamsTail()
 		return false;
 	firsts.clear();
 	follows.clear();
+
+	EST* fparamstail_ast = est_stack.top();
+	est_stack.pop();
 
 	if (lookahead[0] == "comma") {
 		EST* type_ast = est->makeNode("type");
@@ -1067,8 +1110,8 @@ bool parser::fParamsTail()
 				type_ast = est_stack.top();
 				est_stack.pop();
 				fparamstailast->makeFamily(fparams_id);
-				type_ast->makeSiblings(fparamstailast);
-				est_stack.push(fparamstail_ast);
+				fparams_id->makeSiblings(type_ast);
+				est_stack.push(fparamstailast);
 				return true;
 			}
 			else
@@ -1179,6 +1222,8 @@ bool parser::classMethod()
 
 bool parser::methodBodyVar()
 {
+	EST* methodbody_ast = est_stack.top();
+	est_stack.pop();
 	firsts.push_back("var");
 	firsts.push_back("epsilon");
 	follows.push_back("if");
@@ -1197,14 +1242,20 @@ bool parser::methodBodyVar()
 	follows.clear();
 
 	if (lookahead[0] == "var") {
+		EST* vardeclrep_ast = est->makeNode("vardeclrep");
+		est_stack.push(vardeclrep_ast);
 		replace("METHODBODYVAR", "var opencubr VARDECLREP closecubr");
 		if (match("var") & match("opencubr") & varDeclRep() & match("closecubr")) {
+			vardeclrep_ast = est_stack.top();
+			est_stack.pop();
+			methodbody_ast->makeFamily(vardeclrep_ast);
 			return true;
 		}
 		else
 			return false;
 	}
 	else if (lookahead[0] == "if" || lookahead[0] == "while" || lookahead[0] == "read" || lookahead[0] == "write" || lookahead[0] == "return" || lookahead[0] == "break" || lookahead[0] == "continue" | lookahead[0] == "id" || lookahead[0] == "closecubr") {
+		est_stack.push(methodbody_ast);
 		replace("METHODBODYVAR ", "");
 		return true;
 	}
@@ -1214,6 +1265,8 @@ bool parser::methodBodyVar()
 
 bool parser::statementList()
 {
+	EST* statementlist_ast = est_stack.top();
+	est_stack.pop();
 	firsts.push_back("if");
 	firsts.push_back("while");
 	firsts.push_back("read");
@@ -1225,7 +1278,6 @@ bool parser::statementList()
 	firsts.push_back("epsilon");
 	follows.push_back("closecubr");
 
-
 	if (!skipErrors(firsts, follows))
 		return false;
 	firsts.clear();
@@ -1233,21 +1285,41 @@ bool parser::statementList()
 
 	if (lookahead[0] == "if" || (lookahead[0] == "while") || (lookahead[0] == "read") || (lookahead[0] == "write") || (lookahead[0] == "return") || (lookahead[0] == "break") || (lookahead[0] == "continue") || (lookahead[0] == "id")) {
 		replace("STATEMENTLIST", "STATEMENT STATEMENTLIST");
-		if (statement() & statementList())
+		EST* statement_ast = est->makeNode("statement");
+		EST* statementlist = est->makeNode("statementlist");
+		est_stack.push(statementlist);
+		est_stack.push(statement_ast);
+		if (statement() & statementList()) {
+			statement_ast = est_stack.top();
+			est_stack.pop();
+			statementlist = est_stack.top();
+			est_stack.pop();
+			if (statementlist_ast->getType().compare("STATEMENTLIST") == 0) {
+				statementlist_ast->makeFamily(statement_ast);
+				est_stack.push(statementlist_ast);
+			}
+			else {
+				statementlist_ast->makeSiblings(statement_ast);
+				est_stack.push(statementlist_ast);
+			}
 			return true;
+		}
 		else
 			return false;
 	}
 	else if (lookahead[0] == "closecubr") {
 		replace("STATEMENTLIST ", "");
+		est_stack.push(statementlist_ast);
 		return true;
-	}
+	} 
 	else	
 		return false;
 }
 
 bool parser::varDeclRep()
 {
+	EST* vardeclrep_ast = est_stack.top();
+	est_stack.pop();
 	firsts.push_back("integer");
 	firsts.push_back("float");
 	firsts.push_back("string");
@@ -1261,13 +1333,28 @@ bool parser::varDeclRep()
 	follows.clear();
 
 	if (lookahead[0] == "float" || (lookahead[0] == "string") || (lookahead[0] == "integer") || (lookahead[0] == "id")) {
+		EST* vardecl_ast = est->makeNode("vardecl");
+		est_stack.push(vardecl_ast);
 		replace("VARDECLREP", "VARDECL VARDECLREP");
-		if (varDecl() & varDeclRep())
+		if (varDecl() & varDeclRep()) {
+			EST* vardecl_ast = est_stack.top();
+			est_stack.pop();
+			if (vardeclrep_ast->getType().compare("VARDECLREP") == 0) {
+				EST* varlist_ast = est->makeNode("varlist");
+				varlist_ast->makeFamily(vardecl_ast);
+				est_stack.push(varlist_ast);
+			}
+			else {
+				vardeclrep_ast->makeSiblings(vardecl_ast);
+				est_stack.push(vardeclrep_ast);
+			}
 			return true;
+		}
 		else
 			return false;
 	}
 	else if (lookahead[0] == "closecubr") {
+		est_stack.push(vardeclrep_ast);
 		replace("VARDECLREP ", "");
 		return true;
 	}
@@ -1302,13 +1389,23 @@ bool parser::statement()
 	firsts.clear();
 	follows.clear();
 
+	EST* statement_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "id") {
 		replace("STATEMENT", "FUNCORASSIGNSTAT semi");
-		if (funcOrAssignStat() & match("semi"))
+		EST* funcorassignstat_ast = est->makeNode("funcorassignstat");
+		est_stack.push(funcorassignstat_ast);
+		if (funcOrAssignStat() & match("semi")) {
+			funcorassignstat_ast = est_stack.top();
+			est_stack.pop();
+			statement_ast->makeFamily(funcorassignstat_ast);
+			est_stack.push(statement_ast);
 			return true;
+		}
 		else
 			return false;
-	}
+	}// once all done, continue these
 	else if (lookahead[0] == "if") {
 		replace("STATEMENT", "if openpar EXPR closepar then STATBLOCK else STATBLOCK semi");
 		if (match("if") & match("openpar") & expr() & match("closepar") & match("then") & statBlock() & match("else") & statBlock() & match("semi"))
@@ -1331,9 +1428,18 @@ bool parser::statement()
 			return false;
 	}
 	else if (lookahead[0] == "write") {
+		EST* expr_ast = est->makeNode("expr");
+		est_stack.push(expr_ast);
 		replace("STATEMENT", "write openpar EXPR closepar semi");
-		if (match("write") & match("openpar") & expr() & match("closepar") & match("semi"))
+		if (match("write") & match("openpar") & expr() & match("closepar") & match("semi")) {
+			expr_ast = est_stack.top();
+			est_stack.pop();
+			EST* write_ast = est->makeNode("write");
+			write_ast->makeFamily(expr_ast);
+			statement_ast->makeFamily(write_ast);
+			est_stack.push(statement_ast);
 			return true;
+		}
 		else
 			return false;
 	}
@@ -1372,10 +1478,21 @@ bool parser::funcOrAssignStat()
 	firsts.clear();
 	follows.clear();
 
+	EST* funcorassignstat_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "id") {
+		EST* id_ast = est->makeNode("id", lookahead[1]);
 		replace("FUNCORASSIGNSTAT", "id FUNCORASSIGNSTATIDNEST");
-		if (match("id") & funcOrAssignStatIdnest())
+		EST* funcorassignstatidnest_ast = est->makeNode("funcorassignstatidnest");
+		est_stack.push(funcorassignstatidnest_ast);
+		if (match("id") & funcOrAssignStatIdnest()) {
+			funcorassignstat_ast = est_stack.top();
+			est_stack.pop();
+			funcorassignstat_ast->makeFamily(id_ast);
+			est_stack.push(funcorassignstat_ast);
 			return true;
+		}
 		else 
 			return false;
 	}
@@ -1405,9 +1522,20 @@ bool parser::expr()
 	firsts.clear();
 	follows.clear();
 
+	EST* expr_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "intnum" || lookahead[0] == "floatnum" || lookahead[0] == "stringlit" || lookahead[0] == "openpar" || lookahead[0] == "not" || lookahead[0] == "qmark" || lookahead[0] == "id" || lookahead[0] == "plus" || lookahead[0] == "minus") {
 		replace("EXPR", "ARITHEXPR EXPRTAIL");
+		EST* arithexpr_ast = est->makeNode("arithexpr");
+		EST* exprtail_ast = est->makeNode("exprtail");
+		est_stack.push(exprtail_ast);
+		est_stack.push(arithexpr_ast);
 		if (arithExpr() & exprTail()) {
+			arithexpr_ast = est_stack.top();
+			est_stack.pop();
+			expr_ast->makeFamily(arithexpr_ast);
+			est_stack.push(expr_ast);
 			return true;
 		}
 		else
@@ -1547,14 +1675,21 @@ bool parser::funcOrAssignStatIdnest()
 	firsts.clear();
 	follows.clear();
 
+	EST* funcora_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "opensqbr" || lookahead[0] == "dot" || lookahead[0] == "assign") {
+		EST* indicerep = est->makeNode("indicerep");
+		EST* funcorassign_ast = est->makeNode("funcorassignstatsdnestvartail");
+		est_stack.push(funcorassign_ast);
+		est_stack.push(indicerep);
 		replace("FUNCORASSIGNSTATIDNEST", "INDICEREP FUNCORASSIGNSTATIDNESTVARTAIL");
 		if (indiceRep() & funcOrAssignStatIdnestVarTail()) {
 			return true;
 		}
 		else
 			return false;
-	}
+	} // TODO complete when all ready
 	else if (lookahead[0] == "openpar") {
 		replace("FUNCORASSIGNSTATIDNEST", "openpar APARAMS closepar FUNCORASSIGNSTATIDNESTFUNCTAIL");
 		if (match("openpar") & aParams() & match("closepar") & funcOrAssignStatIdnestFuncTail())
@@ -1595,6 +1730,12 @@ bool parser::indiceRep()
 	firsts.clear();
 	follows.clear();
 
+	EST* indicerep = est_stack.top();
+	est_stack.pop();
+	EST* assignstat_ast = est_stack.top();
+	est_stack.pop();
+
+	//TODO once other parts done
 	if (lookahead[0] == "opensqbr") {
 		replace("INDICEREP", "opensqbr EXPR closesqbr INDICEREP");
 		if (match("opensqbr") & expr() & match("closesqbr") & indiceRep())
@@ -1604,6 +1745,7 @@ bool parser::indiceRep()
 	}
 	else if (lookahead[0] == "mult" || lookahead[0] == "div" || lookahead[0] == "and" || lookahead[0] == "semi" || lookahead[0] == "assign" || lookahead[0] == "dot" || lookahead[0] == "eq" || lookahead[0] == "noteq" || lookahead[0] == "lt" || lookahead[0] == "gt" || lookahead[0] == "leq" || lookahead[0] == "geq" || lookahead[0] == "plus" || lookahead[0] == "minus" || lookahead[0] == "or" || lookahead[0] == "comma" || lookahead[0] == "colon" || lookahead[0] == "closesqbr" || lookahead[0] == "closepar") {
 		replace("INDICEREP ", "");
+		est_stack.push(assignstat_ast);
 		return true;
 	}
 	else
@@ -1620,7 +1762,10 @@ bool parser::funcOrAssignStatIdnestVarTail()
 		return false;
 	firsts.clear();
 	follows.clear();
-	
+
+	EST* funcora_ast = est_stack.top();
+	est_stack.pop();
+	// TODO when rest is done
 	if (lookahead[0] == "dot") {
 		replace("FUNCORASSIGNSTATIDNESTVARTAIL", "dot id FUNCORASSIGNSTATIDNEST");
 		if (match("dot") & match("id") & funcOrAssignStatIdnest())
@@ -1630,8 +1775,11 @@ bool parser::funcOrAssignStatIdnestVarTail()
 	}
 	else if (lookahead[0] == "assign") {
 		replace("FUNCORASSIGNSTATIDNESTVARTAIL", "ASSIGNSTATTAIL");
-		if (assignStatTail())
+		EST* assignstattail_ast = est->makeNode("assignstattail");
+		est_stack.push(assignstattail_ast);
+		if (assignStatTail()) {
 			return true;
+		}
 		else
 			return false;
 	}
@@ -1811,14 +1959,27 @@ bool parser::arithExpr()
 		return false;
 	firsts.clear();
 	follows.clear();
-	
+
+	EST* arithexpr_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "intnum" || lookahead[0] == "floatnum" || lookahead[0] == "stringlit" || lookahead[0] == "openpar" || lookahead[0] == "not" || lookahead[0] == "qmark" || lookahead[0] == "id" || lookahead[0] == "plus" || lookahead[0] == "minus") {
 		replace("ARITHEXPR", "TERM ARITHEXPRTAIL");
-		if (term() & arithExprTail())
+		EST* term_ast = est->makeNode("term");
+		EST* arithexprtail_ast = est->makeNode("arithexprtail");
+		est_stack.push(arithexprtail_ast);
+		est_stack.push(term_ast);
+		if (term() & arithExprTail()) {
+			term_ast = est_stack.top();
+			est_stack.pop();
+			arithexpr_ast->makeFamily(term_ast);
+			est_stack.push(arithexpr_ast);
 			return true;
+		}
 		else
 			return false;
 	}
+	// TODO nodes
 	else if (lookahead[0] == "semi" || lookahead[0] == "eq" || lookahead[0] == "noteq" || lookahead[0] == "lt" || lookahead[0] == "gt" || lookahead[0] == "leq" || lookahead[0] == "geq" || lookahead[0] == "comma" || lookahead[0] == "colon" || lookahead[0] == "closesqbr" || lookahead[0] == "closepar") {
 		replace("ARITHEXPR ", "");
 		return true;
@@ -1848,6 +2009,12 @@ bool parser::exprTail()
 	firsts.clear();
 	follows.clear();
 
+	EST* prev_ast = est_stack.top();
+	est_stack.pop();
+	EST* exprtail_ast = est_stack.top();
+	est_stack.pop();
+
+	// TODO complete nodes
 	if (lookahead[0] == "eq" || lookahead[0] == "noteq" || lookahead[0] == "lt" || lookahead[0] == "gt" || lookahead[0] == "leq" || lookahead[0] == "geq") {
 		replace("EXPRTAIL", "RELOP ARITHEXPR");
 		if (relOp() & arithExpr())
@@ -1856,6 +2023,7 @@ bool parser::exprTail()
 			return false;
 	}
 	else if (lookahead[0] == "semi" || lookahead[0] == "comma" || lookahead[0] == "colon" || lookahead[0] == "closesqbr" || lookahead[0] == "closepar") {
+		est_stack.push(prev_ast);
 		replace("EXPRTAIL ", "");
 		return true;
 	}
@@ -1894,7 +2062,14 @@ bool parser::term()
 	firsts.clear();
 	follows.clear();
 
+	EST* term_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "intnum" || lookahead[0] == "floatnum" || lookahead[0] == "stringlit" || lookahead[0] == "openpar" || lookahead[0] == "not" || lookahead[0] == "qmark" || lookahead[0] == "id" || lookahead[0] == "plus" || lookahead[0] == "minus") {
+		EST* factor_ast = est->makeNode("factor");
+		EST* termtail_ast = est->makeNode("termtail");
+		est_stack.push(termtail_ast);
+		est_stack.push(factor_ast);
 		replace("TERM", "FACTOR TERMTAIL");
 		if (factor() & termTail()) {
 			return true;
@@ -1932,6 +2107,11 @@ bool parser::termTail()
 	firsts.clear();
 	follows.clear();
 
+	EST* prev_valast = est_stack.top();
+	est_stack.pop();
+	EST* termTail_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "mult" || lookahead[0] == "div" || lookahead[0] == "and") {
 		replace("TERMTAIL", "MULTOP FACTOR TERMTAIL");
 		if (multOp() & factor() & termTail())
@@ -1940,6 +2120,7 @@ bool parser::termTail()
 			return false;
 	}
 	else if (lookahead[0] == "semi" || lookahead[0] == "eq" || lookahead[0] == "noteq" || lookahead[0] == "lt" || lookahead[0] == "gt" || lookahead[0] == "leq" || lookahead[0] == "geq" || lookahead[0] == "or" || lookahead[0] == "plus" || lookahead[0] == "minus" || lookahead[0] == "comma" || lookahead[0] == "colon" || lookahead[0] == "closesqbr" || lookahead[0] == "closepar") {
+		est_stack.push(prev_valast);
 		replace("TERMTAIL ", "");
 		return true;
 	}
@@ -1970,6 +2151,11 @@ bool parser::arithExprTail()
 	firsts.clear();
 	follows.clear();
 
+	EST* prev_val = est_stack.top();
+	est_stack.pop();
+	EST* arithexprtail_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "plus" || lookahead[0] == "minus" || lookahead[0] == "or") {
 		replace("ARITHEXPRTAIL", "ADDOP TERM ARITHEXPRTAIL");
 		if (addOp() & term() & arithExprTail())
@@ -1978,6 +2164,7 @@ bool parser::arithExprTail()
 			return false;
 	}
 	else if (lookahead[0] == "semi" || lookahead[0] == "eq" || lookahead[0] == "noteq" || lookahead[0] == "lt" || lookahead[0] == "gt" || lookahead[0] == "leq" || lookahead[0] == "geq" || lookahead[0] == "comma" || lookahead[0] == "colon" || lookahead[0] == "closesqbr" || lookahead[0] == "closepar") {
+		est_stack.push(prev_val);
 		replace("ARITHEXPRTAIL ", "");
 		return true;
 	}
@@ -2019,17 +2206,25 @@ bool parser::factor()
 	firsts.clear();
 	follows.clear();
 
+	EST* factor_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "id") {
+		EST* funcorvar_ast = est->makeNode("funcorvar");
 		replace("FACTOR", "FUNCORVAR");
+		est_stack.push(funcorvar_ast);
 		if (funcOrVar()) {
 			return true;
 		}
 		return false;
 	}
 	else if (lookahead[0] == "intnum") {
+		EST* intnum_ast = est->makeNode("intnum", lookahead[1]);
 		replace("FACTOR", "intnum");
-		if (match("intnum"))
+		if (match("intnum")) {
+			est_stack.push(intnum_ast);
 			return true;
+		}
 		else
 			return false;
 	}
@@ -2105,10 +2300,20 @@ bool parser::funcOrVar()
 	firsts.clear();
 	follows.clear();
 
+	EST* funcorvar_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "id") {
+		EST* id_ast = est->makeNode("id", lookahead[1]);
+		EST* funcorvaridnest_ast = est->makeNode("funcorvaridnest");
+		est_stack.push(funcorvaridnest_ast);
 		replace("FUNCORVAR", "id FUNCORVARIDNEST");
-		if (match("id") & funcOrVarIdnest())
+		if (match("id") & funcOrVarIdnest()) {
+			// TODO add idnest
+			est_stack.pop();
+			est_stack.push(id_ast);
 			return true;
+		}
 		else
 			return false;
 	}
@@ -2182,6 +2387,9 @@ bool parser::funcOrVarIdnest()
 	firsts.clear();
 	follows.clear();
 
+	EST* funcorvaridnest_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "opensqbr" || lookahead[0] == "dot") {
 		replace("FUNCORVARIDNEST", "INDICEREP FUNCORVARIDNESTTAIL");
 		if (indiceRep() & funcOrVarIdnestTail())
@@ -2197,6 +2405,7 @@ bool parser::funcOrVarIdnest()
 			return false;
 	}
 	else if (lookahead[0] == "closesqbr" || lookahead[0] == "closepar" || lookahead[0] == "semi" || lookahead[0] == "mult" || lookahead[0] == "div" || lookahead[0] == "and" || lookahead[0] == "eq" || lookahead[0] == "noteq" || lookahead[0] == "lt" || lookahead[0] == "gt" || lookahead[0] == "leq" || lookahead[0] == "geq" || lookahead[0] == "plus" || lookahead[0] == "minus" || lookahead[0] == "or" || lookahead[0] == "comma" || lookahead[0] == "colon") {
+		est_stack.push(funcorvaridnest_ast);
 		replace("FUNCORVARIDNEST ", "");
 		return true;
 	}
@@ -2372,9 +2581,22 @@ bool parser::assignStatTail()
 	firsts.clear();
 	follows.clear();
 
+	EST* assignstattail_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "assign") {
+		EST* assignop_ast = est->makeNode("assignop");
+		EST* expr_ast = est->makeNode("expr");
+		est_stack.push(expr_ast);
+		est_stack.push(assignop_ast);
 		replace("ASSIGNSTATTAIL", "ASSIGNOP EXPR");
 		if (assignOp() & expr()) {
+			expr_ast = est_stack.top();
+			est_stack.pop();
+			assignop_ast = est_stack.top();
+			est_stack.pop();
+			assignop_ast->makeFamily(expr_ast);
+			est_stack.push(assignop_ast);
 			return true;
 		}
 		else
@@ -2401,11 +2623,19 @@ bool parser::assignOp()
 		return false;
 	firsts.clear();
 	follows.clear();
+
+	EST* assignop_ast = est_stack.top();
+	est_stack.pop();
+	EST* expr_ast = est_stack.top();
+	est_stack.pop();
 	
 	if (lookahead[0] == "assign") {
 		replace("ASSIGNOP", "assign");
-		if (match("assign"))
+		if (match("assign")) {
+			est_stack.push(assignop_ast);
+			est_stack.push(expr_ast);
 			return true;
+		}
 		else
 			return false;
 	}

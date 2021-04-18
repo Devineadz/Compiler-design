@@ -1,4 +1,6 @@
 #include "EST.h"
+#include "Visitor.h"
+#include "Prog_node.h"
 
 
 
@@ -47,9 +49,33 @@ void EST::makeFamily(EST* y)
 		else
 			this->left_child = y;
 	}
+	else {
+		y->right_sibling = this->left_child;
+		this->left_child = y;
+	}
 
 	y->parent = this;
 }
+
+vector<EST*> EST::getChildren()
+{
+	vector<EST*>children;
+	if (this->left_child != NULL) {
+		EST* nextChild = this->left_child;
+		children.push_back(nextChild);
+		while (nextChild->right_sibling != NULL) {
+			nextChild = nextChild->right_sibling;
+			children.push_back(nextChild);
+		}
+	}
+	return children;
+}
+
+void EST::accept(Visitor* visitor)
+{
+	visitor->visit(this);
+}
+
 
 
 EST* ESTmaker::makeNode(string node_type)
@@ -58,7 +84,7 @@ EST* ESTmaker::makeNode(string node_type)
 		return new Class_decl;
 	}
 	if (node_type == "prog") {
-		return new Prog;
+		return new Prog_node;
 	}
 	if (node_type == "func_def") {
 		return new Func_def;
@@ -116,6 +142,66 @@ EST* ESTmaker::makeNode(string node_type)
 	}
 	if (node_type == "classlist") {
 		return new Classlist;
+	}
+	if (node_type == "void") {
+		return new Void;
+	}
+	if (node_type == "vardeclrep") {
+		return new Vardeclrep;
+	}
+	if (node_type == "varlist") {
+		return new Varlist;
+	}
+	if (node_type == "statement") {
+		return new Statement;
+	}
+	if (node_type == "funcorassignstat") {
+		return new Funcorassignstat;
+	}
+	if (node_type == "funcorassignstatidnest") {
+		return new FuncOrAssignStatIdnest;
+	}
+	if (node_type == "indicerep") {
+		return new Indicerep;
+	}
+	if (node_type == "funcorassignstatsdnestvartail") {
+		return new FuncOrAssignStatIdnestVarTail;
+	}
+	if (node_type == "assignstattail") {
+		return new Assignstattail;
+	}
+	if (node_type == "assignop") {
+		return new Assignop;
+	}
+	if (node_type == "expr") {
+		return new Expr;
+	}
+	if (node_type == "arithexpr") {
+		return new Arithexpr;
+	}
+	if (node_type == "exprtail") {
+		return new Exprtail;
+	}
+	if (node_type == "term") {
+		return new Term;
+	}
+	if (node_type == "factor") {
+		return new Factor;
+	}
+	if (node_type == "write") {
+		return new Write;
+	}
+	if (node_type == "termtail") {
+		return new Termtail;
+	}
+	if (node_type == "arithexprtail") {
+		return new Arithexprtail;
+	}
+	if (node_type == "funcorvar") {
+		return new Funcorvar;
+	}
+	if (node_type == "funcorvaridnest") {
+		return new Funcorvaridnest;
 	}
 	else
 		return NULL;

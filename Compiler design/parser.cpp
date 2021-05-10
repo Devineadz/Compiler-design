@@ -66,6 +66,7 @@ bool parser::skipErrors(vector<string>firsts, vector<string>follows)
 	errorFile.open(errorName, ios::app);
 	if (errorFile.is_open()) {
 		errorFile << "Syntax error for: " << lookahead[0] << " - " << lookahead[1] << " at location: " << lookahead[2] << ".\n";
+		cout << "Syntax error for: " << lookahead[0] << " - " << lookahead[1] << " at location: " << lookahead[2] << ".\n";
 	}
 	errorFile.close();
 	bool lookaheadCheck = false;
@@ -118,7 +119,7 @@ EST* parser::parse()
 	ESTmaker* est = new ESTmaker();
 	nextToken();
 	if (start() & match("$")) {
-		cout << "Parsing ready";
+		cout << "Parsing ready\n";
 		EST* prog = est_stack.top();
 		est_stack.pop();
 		return prog;
@@ -2157,9 +2158,23 @@ bool parser::arithExprTail()
 	est_stack.pop();
 
 	if (lookahead[0] == "plus" || lookahead[0] == "minus" || lookahead[0] == "or") {
+		EST* addop_ast = est->makeNode("addop");
+		EST* term_ast = est->makeNode("term");
+		EST* arithexprtail_ast = est->makeNode("arithexprtail");
+		est_stack.push(arithexprtail_ast);
+		est_stack.push(term_ast);
+		est_stack.push(addop_ast);
 		replace("ARITHEXPRTAIL", "ADDOP TERM ARITHEXPRTAIL");
-		if (addOp() & term() & arithExprTail())
+		if (addOp() & term() & arithExprTail()) {
+			term_ast = est_stack.top();
+			est_stack.pop();
+			arithexprtail_ast = est_stack.top();
+			est_stack.pop();
+			addop_ast->makeFamily(prev_val);
+			prev_val->makeSiblings(term_ast);
+			est_stack.push(addop_ast);
 			return true;
+		}
 		else
 			return false;
 	}
@@ -2475,10 +2490,18 @@ bool parser::addOp()
 	firsts.clear();
 	follows.clear();
 
+	EST* addop_ast = est_stack.top();
+	est_stack.pop();
+	EST* term_ast = est_stack.top();
+	est_stack.pop();
+
 	if (lookahead[0] == "plus") {
 		replace("ADDOP", "plus");
-		if (match("plus"))
+		if (match("plus")) {
+			est_stack.push(addop_ast);
+			est_stack.push(term_ast);
 			return true;
+		}
 		else
 			return false;
 	}

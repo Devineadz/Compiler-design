@@ -1,5 +1,0 @@
-digraph EST{
-PROG -> CLASSDECL
-PROG -> FUNCDEF
-PROG -> FUNCBODY
-}

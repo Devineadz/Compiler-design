@@ -191,6 +191,20 @@ public:
 //	}
 };
 
+class Addop : public EST {
+public:
+	Addop() {
+		parent = NULL;
+		right_sibling = NULL;
+		leftmost_sibling = NULL;
+		left_child = NULL;
+		type = "ADDOP";
+	}
+	//	void accept(Visitor* visitor) {
+		//	visitor->visit(this);
+	//	}
+};
+
 class Expr : public EST {
 public:
 	Expr() {

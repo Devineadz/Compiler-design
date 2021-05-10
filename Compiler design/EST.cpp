@@ -203,6 +203,9 @@ EST* ESTmaker::makeNode(string node_type)
 	if (node_type == "funcorvaridnest") {
 		return new Funcorvaridnest;
 	}
+	if (node_type == "addop") {
+		return new Addop;
+	}
 	else
 		return NULL;
 }

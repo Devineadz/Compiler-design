@@ -19,6 +19,11 @@ public:
 	string getLexeme();
 	string getRow();
 private:
+	fstream targetFile;
+	fstream errorFile;
+	string errorName;
+	string targetName;
+	void createFiles(string fileName);
 	string nextToken();
 	vector<string> fileRows;
 	string lexeme;

@@ -1,5 +1,2 @@
-Syntax error for: semi - ; at location: 15.
-Syntax error for: closesqbr - ] at location: 17.
-Syntax error for: func - func at location: 20.
-Syntax error for: sr - :: at location: 20.
-Syntax error for: openpar - ( at location: 20.
+Syntax error for: invalid character - ~ at location: 1.
+Syntax error for: minus - - at location: 6.

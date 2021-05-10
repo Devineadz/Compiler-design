@@ -62,6 +62,9 @@ void CodeGenerationVisitor::visit(EST* node)
 	if (node->getType() == "WRITE") {
 		visitWR(node);
 	}
+	if (node->getType() == "ADDOP") {
+		visitAD(node);
+	}
 
 //}
 /*
@@ -125,7 +128,6 @@ void CodeGenerationVisitor::visitV(EST* node)
 			moonDataCode += moonCodeIndent + "% space for variable " + children.at(0)->getType() + "\n";
 			moonDataCode += children.at(0)->getType() + moonCodeIndent2 + "res 4\n";
 		}
-		cout << moonDataCode;
 	}
 }
 
@@ -188,16 +190,18 @@ void CodeGenerationVisitor::visitAE(EST* node)
 	if (children[0] != NULL) {
 		val = children[0]->getType();
 	}
-	string localRegister = this->registerPool.top();
-	registerPool.pop();
-	string varName = "t" + to_string(tempvarnum);
-	moonDataCode += moonCodeIndent + "% space for constant " + val + "\n";
-	moonDataCode += varName + moonCodeIndent2 + "res 4\n";
-	moonExecCode += moonCodeIndent + "% processing: " + varName + " := " + val + "\n";
-	moonExecCode += moonCodeIndent + "addi " + localRegister + ",r0," + val + "\n";
-	moonExecCode += moonCodeIndent + "sw " + varName + "(r0)," + localRegister + "\n";
-	// deallocate register
-	this->registerPool.push(localRegister);
+	if (dynamic_cast<Addop*>(children[0]) == nullptr) {
+		string localRegister = this->registerPool.top();
+		registerPool.pop();
+		string varName = "t" + to_string(tempvarnum);
+		moonDataCode += moonCodeIndent + "% space for constant " + val + "\n";
+		moonDataCode += varName + moonCodeIndent2 + "res 4\n";
+		moonExecCode += moonCodeIndent + "% processing: " + varName + " := " + val + "\n";
+		moonExecCode += moonCodeIndent + "addi " + localRegister + ",r0," + val + "\n";
+		moonExecCode += moonCodeIndent + "sw " + varName + "(r0)," + localRegister + "\n";
+		// deallocate register
+		this->registerPool.push(localRegister);
+	}
 }
 
 void CodeGenerationVisitor::visitWR(EST* node)
@@ -228,5 +232,57 @@ void CodeGenerationVisitor::visitWR(EST* node)
 	moonExecCode += moonCodeIndent + "% output to console\n";
 	moonExecCode += moonCodeIndent + "jl r15, putstr\n";
 	this->registerPool.push(localRegister);
+}
+
+void CodeGenerationVisitor::visitAD(EST* node)
+{
+	vector<EST*> children = node->getChildren();
+	for (vector<EST*>::iterator it = begin(children); it != end(children); ++it) {
+		(*it)->accept(this);
+	}
+	// Check if vals are id's or ints
+	string val;
+	string val2;
+	if (dynamic_cast<Intnumber*>(children[0]) == nullptr) {
+		if (children[0] != NULL) {
+			val = children[0]->getType();
+		}
+	}
+	if (dynamic_cast<Intnumber*>(children[1]) == nullptr) {
+	}
+	else {
+		if (children[1] != NULL) {
+			val2 = children[1]->getType();
+		}
+		string localRegister = this->registerPool.top();
+		registerPool.pop();
+		string varName = "t" + to_string(tempvarnum);
+		tempvarnum++;
+		moonDataCode += moonCodeIndent + "% space for constant " + val2 + "\n";
+		moonDataCode += varName + moonCodeIndent2 + "res 4\n";
+		moonExecCode += moonCodeIndent + "% processing: " + varName + " := " + val2 + "\n";
+		moonExecCode += moonCodeIndent + "addi " + localRegister + ",r0," + val2 + "\n";
+		moonExecCode += moonCodeIndent + "sw " + varName + "(r0)," + localRegister + "\n";
+		// deallocate register
+		this->registerPool.push(localRegister);
+		val2 = varName;
+	}
+	string newVar = "t" + to_string(tempvarnum);
+	string localReg = registerPool.top();
+	registerPool.pop();
+	string leftChildreg = registerPool.top();
+	registerPool.pop();
+	string rightChildreg = registerPool.top();
+	registerPool.pop();
+	moonExecCode += moonCodeIndent + "% processing: " + newVar + " := " + val + " + " + val2 + "\n";
+	moonExecCode += moonCodeIndent + "lw " + leftChildreg + "," + val + +"(r0)\n";
+	moonExecCode += moonCodeIndent + "lw " + rightChildreg + "," + val2 + +"(r0)\n";
+	moonExecCode += moonCodeIndent + "add " + localReg + "," + leftChildreg + "," + rightChildreg + "\n";
+	moonDataCode += moonCodeIndent + "% space for " + val + " + " + val2 + "\n";
+	moonDataCode += newVar + moonCodeIndent2 + "res 4\n";
+	moonExecCode += moonCodeIndent + "sw " + newVar + "(r0)," + localReg + "\n";
+	registerPool.push(rightChildreg);
+	registerPool.push(leftChildreg);
+	registerPool.push(leftChildreg);
 }
 

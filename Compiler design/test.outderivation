@@ -1,8 +1,0 @@
-START
-PROG
-CLASSDECL FUNCDEF main FUNCBODY
-FUNCDEF main FUNCBODY
-main FUNCBODY
-main opencubr METHODBODYVAR STATEMENTLIST closecubr
-main opencubr STATEMENTLIST closecubr
-main opencubr closecubr

@@ -14,6 +14,7 @@ lexer::lexer(string path)
 	nextLine = "";
 	isLast = false;
 	endFile = false;
+	createFiles(path);
 }
 
 lexer::~lexer()
@@ -522,6 +523,17 @@ int lexer::table(int state, char lookup) {
 	}
 }
 
+void lexer::createFiles(string fileName)
+{
+	string newFileName;
+	for (int count = 0; fileName[count] != '.'; count++) { // gets the name from the original file name
+		newFileName.push_back(fileName[count]);
+	}
+
+	errorName = newFileName + ".outlexerrors";
+	targetName = newFileName + ".outlextokens";
+}
+
 string lexer::nextToken() { // gets the next token
 	int state = 1;
 	string token = "";
@@ -620,6 +632,11 @@ string lexer::getNextToken() { // reads file and gets the token
 		}
 		token = nextToken();
 		if (token == "error" || token == "invalid character") { // returns error string
+			errorFile.open(errorName, ios::app);
+			if (errorFile.is_open()) {
+				errorFile << "[" << token << ", " << lexeme << ", " << lineCounter << "]\n";
+			}
+			errorFile.close();
 			return token;
 		}
 		else {
@@ -642,6 +659,11 @@ string lexer::getNextToken() { // reads file and gets the token
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 					lexeme.erase(lexeme.length() - 1, lexeme.length());
 				}
+				targetFile.open(targetName, ios::app);
+				if (targetFile.is_open()) {
+					targetFile << "[" << token << ", " << lexeme << ", " << lineCounter << "]\n";
+				}
+				targetFile.close();
 				return token;
 			}
 		}

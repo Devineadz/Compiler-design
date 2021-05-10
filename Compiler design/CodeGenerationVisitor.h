@@ -38,6 +38,7 @@ class CodeGenerationVisitor : public Visitor {
 		void visitEX(EST* node);
 		void visitAE(EST* node);
 		void visitWR(EST* node);
+		void visitAD(EST* node);
 
 		
 	//	void visit(Classdecl* node) {};
